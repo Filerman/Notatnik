@@ -3,14 +3,18 @@ using Microsoft.EntityFrameworkCore.Design;
 
 namespace Notatnik.Data
 {
-    // używane przez EF Core w czasie migracji
     public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
     {
         public AppDbContext CreateDbContext(string[] args)
         {
             var builder = new DbContextOptionsBuilder<AppDbContext>();
             builder.UseSqlite("Data Source=notatnik.db");
-            return new AppDbContext(builder.Options);
+
+            var context = new AppDbContext(builder.Options);
+            // też wywołujemy EnsureCreated(), by mieć pewność, że przy
+            // uruchomieniu z poziomu EF Tools (dotnet ef…) struktura jest gotowa:
+            context.Database.EnsureCreated();
+            return context;
         }
     }
 }

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Notatnik.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class dupa : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -68,6 +68,27 @@ namespace Notatnik.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ChecklistItems",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Text = table.Column<string>(type: "TEXT", nullable: false),
+                    IsChecked = table.Column<bool>(type: "INTEGER", nullable: false),
+                    NoteId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChecklistItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ChecklistItems_Notes_NoteId",
+                        column: x => x.NoteId,
+                        principalTable: "Notes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "NoteTag",
                 columns: table => new
                 {
@@ -92,6 +113,11 @@ namespace Notatnik.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_ChecklistItems_NoteId",
+                table: "ChecklistItems",
+                column: "NoteId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Folders_ParentFolderId",
                 table: "Folders",
                 column: "ParentFolderId");
@@ -110,6 +136,9 @@ namespace Notatnik.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "ChecklistItems");
+
             migrationBuilder.DropTable(
                 name: "NoteTag");
 

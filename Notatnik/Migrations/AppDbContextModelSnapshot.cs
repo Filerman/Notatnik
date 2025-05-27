@@ -17,6 +17,29 @@ namespace Notatnik.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.5");
 
+            modelBuilder.Entity("Notatnik.Models.ChecklistItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsChecked")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("NoteId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NoteId");
+
+                    b.ToTable("ChecklistItems");
+                });
+
             modelBuilder.Entity("Notatnik.Models.Folder", b =>
                 {
                     b.Property<int>("Id")
@@ -100,6 +123,17 @@ namespace Notatnik.Migrations
                     b.ToTable("NoteTag");
                 });
 
+            modelBuilder.Entity("Notatnik.Models.ChecklistItem", b =>
+                {
+                    b.HasOne("Notatnik.Models.Note", "Note")
+                        .WithMany("ChecklistItems")
+                        .HasForeignKey("NoteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Note");
+                });
+
             modelBuilder.Entity("Notatnik.Models.Folder", b =>
                 {
                     b.HasOne("Notatnik.Models.Folder", "ParentFolder")
@@ -140,6 +174,11 @@ namespace Notatnik.Migrations
                     b.Navigation("Notes");
 
                     b.Navigation("Subfolders");
+                });
+
+            modelBuilder.Entity("Notatnik.Models.Note", b =>
+                {
+                    b.Navigation("ChecklistItems");
                 });
 #pragma warning restore 612, 618
         }

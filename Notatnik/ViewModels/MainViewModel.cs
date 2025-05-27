@@ -55,7 +55,6 @@ namespace Notatnik.ViewModels
 
         public MainViewModel()
         {
-            // Inicjalizacja kontekstu i wczytanie istniejących folderów (bez „Domyślnego”)
             _db = new AppDbContextFactory().CreateDbContext(null);
             var folderList = _db.Folders
                                 .Include(f => f.Subfolders)
@@ -64,16 +63,12 @@ namespace Notatnik.ViewModels
             Folders = new ObservableCollection<Folder>(folderList);
             Notes = new ObservableCollection<Note>();
 
-            // Komendy dla notatek
             AddNoteCommand = new RelayCommand(_ => AddNote(), _ => SelectedFolder != null);
             EditNoteCommand = new RelayCommand(_ => EditNote(), _ => SelectedNote != null);
             DeleteNoteCommand = new RelayCommand(_ => DeleteNote(), _ => SelectedNote != null);
-
-            // Komendy dla folderów
             AddFolderCommand = new RelayCommand(_ => AddFolder());
             DeleteFolderCommand = new RelayCommand(_ => DeleteFolder(), _ => SelectedFolder != null);
 
-            // Ustawienie zaznaczonego folderu, jeśli są jakieś
             if (Folders.Any())
                 SelectedFolder = Folders.First();
         }
@@ -92,12 +87,22 @@ namespace Notatnik.ViewModels
 
         private void AddNote()
         {
+            // 1) Pokaż okno wyboru typu notatki
+            var typeDlg = new SelectNoteTypeWindow();
+            if (typeDlg.ShowDialog() != true)
+                return;
+
+            // 2) Utwórz notatkę z wybranym typem
             var note = new Note
             {
                 CreatedAt = DateTime.Now,
                 ModifiedAt = DateTime.Now,
-                FolderId = SelectedFolder.Id
+                FolderId = SelectedFolder.Id,
+                Type = typeDlg.SelectedType,  // ← NoteType z enum: CheckList, Regular, LongFormat :contentReference[oaicite:0]{index=0}
+                Content = string.Empty      // <<< zapobiegamy nullowi
             };
+
+            // 3) Pokaż okno edycji szczegółów
             var vm = new NoteDetailsViewModel(note);
             var win = new NoteDetailsWindow(vm);
             if (win.ShowDialog() == true)
@@ -132,12 +137,9 @@ namespace Notatnik.ViewModels
             var dlg = new FolderDetailsWindow();
             if (dlg.ShowDialog() == true)
             {
-                // Tworzymy nowy folder
                 var folder = new Folder { Name = dlg.FolderName };
                 _db.Folders.Add(folder);
                 _db.SaveChanges();
-
-                // Dodajemy do kolekcji i zaznaczamy
                 Folders.Add(folder);
                 SelectedFolder = folder;
             }
@@ -146,10 +148,8 @@ namespace Notatnik.ViewModels
         private void DeleteFolder()
         {
             if (SelectedFolder == null) return;
-
             _db.Folders.Remove(SelectedFolder);
             _db.SaveChanges();
-
             Folders.Remove(SelectedFolder);
             SelectedFolder = Folders.FirstOrDefault();
         }

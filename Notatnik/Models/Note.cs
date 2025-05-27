@@ -27,5 +27,8 @@ namespace Notatnik.Models
 
         // relacja wiele-do-wielu do Tag
         public ICollection<Tag> Tags { get; set; } = new List<Tag>();
+
+        // **pozycje checklisty** (tylko jeśli Type == CheckList)
+        public ICollection<ChecklistItem> ChecklistItems { get; set; } = new List<ChecklistItem>();
     }
 }
