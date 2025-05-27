@@ -50,35 +50,32 @@ namespace Notatnik.ViewModels
         public ICommand AddNoteCommand { get; }
         public ICommand EditNoteCommand { get; }
         public ICommand DeleteNoteCommand { get; }
+        public ICommand AddFolderCommand { get; }
+        public ICommand DeleteFolderCommand { get; }
 
         public MainViewModel()
         {
-            // 1) Inicjalizacja kontekstu i wczytanie folderów
+            // Inicjalizacja kontekstu i wczytanie istniejących folderów (bez „Domyślnego”)
             _db = new AppDbContextFactory().CreateDbContext(null);
             var folderList = _db.Folders
                                 .Include(f => f.Subfolders)
                                 .ToList();
 
-            // 2) Jeśli w bazie nie ma folderów, dodaj jeden „Domyślny”
-            if (!folderList.Any())
-            {
-                var root = new Folder { Name = "Domyślny" };
-                _db.Folders.Add(root);
-                _db.SaveChanges();
-                folderList.Add(root);
-            }
-
-            // 3) Utworzenie kolekcji i inicjalizacja Notes
             Folders = new ObservableCollection<Folder>(folderList);
             Notes = new ObservableCollection<Note>();
 
-            // 4) Inicjalizacja komend (AddNote wymaga wybranego folderu)
+            // Komendy dla notatek
             AddNoteCommand = new RelayCommand(_ => AddNote(), _ => SelectedFolder != null);
             EditNoteCommand = new RelayCommand(_ => EditNote(), _ => SelectedNote != null);
             DeleteNoteCommand = new RelayCommand(_ => DeleteNote(), _ => SelectedNote != null);
 
-            // 5) Ustawienie domyślnego folderu (to wywoła LoadNotes, ale Notes już istnieje)
-            SelectedFolder = Folders.First();
+            // Komendy dla folderów
+            AddFolderCommand = new RelayCommand(_ => AddFolder());
+            DeleteFolderCommand = new RelayCommand(_ => DeleteFolder(), _ => SelectedFolder != null);
+
+            // Ustawienie zaznaczonego folderu, jeśli są jakieś
+            if (Folders.Any())
+                SelectedFolder = Folders.First();
         }
 
         private void LoadNotes()
@@ -89,7 +86,6 @@ namespace Notatnik.ViewModels
             var notesInFolder = _db.Notes
                                    .Where(n => n.FolderId == SelectedFolder.Id)
                                    .ToList();
-
             foreach (var note in notesInFolder)
                 Notes.Add(note);
         }
@@ -102,10 +98,8 @@ namespace Notatnik.ViewModels
                 ModifiedAt = DateTime.Now,
                 FolderId = SelectedFolder.Id
             };
-
             var vm = new NoteDetailsViewModel(note);
             var win = new NoteDetailsWindow(vm);
-
             if (win.ShowDialog() == true)
             {
                 _db.Notes.Add(note);
@@ -118,7 +112,6 @@ namespace Notatnik.ViewModels
         {
             var vm = new NoteDetailsViewModel(SelectedNote);
             var win = new NoteDetailsWindow(vm);
-
             if (win.ShowDialog() == true)
             {
                 SelectedNote.ModifiedAt = DateTime.Now;
@@ -132,6 +125,33 @@ namespace Notatnik.ViewModels
             _db.Notes.Remove(SelectedNote);
             _db.SaveChanges();
             LoadNotes();
+        }
+
+        private void AddFolder()
+        {
+            var dlg = new FolderDetailsWindow();
+            if (dlg.ShowDialog() == true)
+            {
+                // Tworzymy nowy folder
+                var folder = new Folder { Name = dlg.FolderName };
+                _db.Folders.Add(folder);
+                _db.SaveChanges();
+
+                // Dodajemy do kolekcji i zaznaczamy
+                Folders.Add(folder);
+                SelectedFolder = folder;
+            }
+        }
+
+        private void DeleteFolder()
+        {
+            if (SelectedFolder == null) return;
+
+            _db.Folders.Remove(SelectedFolder);
+            _db.SaveChanges();
+
+            Folders.Remove(SelectedFolder);
+            SelectedFolder = Folders.FirstOrDefault();
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
