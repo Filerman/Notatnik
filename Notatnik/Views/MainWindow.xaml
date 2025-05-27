@@ -1,0 +1,78 @@
+﻿<Window x:Class="Notatnik.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:viewModels="clr-namespace:Notatnik.ViewModels"
+        xmlns:models="clr-namespace:Notatnik.Models"
+        Title="Notatnik" Height="600" Width="1000">
+
+    <DockPanel>
+        <!-- Pasek narzędzi -->
+        <ToolBar DockPanel.Dock="Top" Padding="5">
+            <Button Content="Nowa notatka" Command="{Binding AddNoteCommand}" Margin="2"/>
+            <Button Content="Usuń notatkę" Command="{Binding DeleteNoteCommand}" Margin="2"/>
+            <Separator/>
+            <Button Content="Nowy folder" Command="{Binding AddFolderCommand}" Margin="2"/>
+            <Button Content="Usuń folder" Command="{Binding DeleteFolderCommand}" Margin="2"/>
+            <Separator/>
+            <Button Content="Zarządzaj tagami" Command="{Binding ManageTagsCommand}" Margin="2"/>
+        </ToolBar>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="250"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Drzewo folderów -->
+            <Border Grid.Column="0" Margin="5" BorderBrush="LightGray" BorderThickness="1" CornerRadius="4">
+                <TreeView x:Name="TreeViewFolders"
+                          ItemsSource="{Binding Folders}"
+                          SelectedItemChanged="TreeViewFolders_SelectedItemChanged"
+                          Background="WhiteSmoke">
+                    <TreeView.ItemTemplate>
+                        <HierarchicalDataTemplate DataType="{x:Type models:Folder}"
+                                                  ItemsSource="{Binding Subfolders}">
+                            <TextBlock Text="{Binding Name}" Padding="2"/>
+                        </HierarchicalDataTemplate>
+                    </TreeView.ItemTemplate>
+                </TreeView>
+            </Border>
+
+            <!-- Lista notatek -->
+            <Border Grid.Column="1" Margin="5" BorderBrush="LightGray" BorderThickness="1" CornerRadius="4">
+                <ListView ItemsSource="{Binding Notes}"
+                          SelectedItem="{Binding SelectedNote}"
+                          Background="WhiteSmoke"
+                          Margin="5">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Tytuł" Width="200"
+                                            DisplayMemberBinding="{Binding Title}"/>
+                            <GridViewColumn Header="Podgląd" Width="300">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Snippet}"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Ostatnia edycja" Width="120"
+                                            DisplayMemberBinding="{Binding LastModified, StringFormat=d}"/>
+                            <GridViewColumn Header="Szczegóły" Width="100">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="Otwórz"
+                                                Command="{Binding DataContext.EditNoteCommand,
+                                                          RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}"
+                                                Padding="2" Margin="0"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>
