@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Notatnik.Models
 {
@@ -7,12 +8,13 @@ namespace Notatnik.Models
         public int Id { get; set; }
         public string Name { get; set; }
 
-        // parent-child dla hierarchii
         public int? ParentFolderId { get; set; }
         public Folder ParentFolder { get; set; }
-        public ICollection<Folder> Subfolders { get; set; } = new List<Folder>();
+        public List<Folder> Subfolders { get; set; } = new List<Folder>();
 
-        // notatki w folderze
-        public ICollection<Note> Notes { get; set; } = new List<Note>();
+        public List<Note> Notes { get; set; } = new List<Note>();
+
+        [NotMapped]
+        public bool IsMarkedForDeletion { get; set; } = false;
     }
 }

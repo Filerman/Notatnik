@@ -18,6 +18,12 @@ namespace Notatnik.ViewModels
         public ObservableCollection<Folder> Folders { get; }
         public ObservableCollection<Note> Notes { get; }
 
+        public ICommand AddNoteCommand { get; }
+        public ICommand EditNoteCommand { get; }
+        public ICommand DeleteMarkedNotesCommand { get; }
+        public ICommand AddFolderCommand { get; }
+        public ICommand DeleteMarkedFoldersCommand { get; }
+
         private Folder _selectedFolder;
         public Folder SelectedFolder
         {
@@ -33,41 +39,34 @@ namespace Notatnik.ViewModels
             }
         }
 
-        private Note _selectedNote;
-        public Note SelectedNote
+        private Note _singleSelectedNote;
+        public Note SingleSelectedNote
         {
-            get => _selectedNote;
+            get => _singleSelectedNote;
             set
             {
-                if (_selectedNote != value)
+                if (_singleSelectedNote != value)
                 {
-                    _selectedNote = value;
-                    OnPropertyChanged(nameof(SelectedNote));
+                    _singleSelectedNote = value;
+                    OnPropertyChanged(nameof(SingleSelectedNote));
                 }
             }
         }
 
-        public ICommand AddNoteCommand { get; }
-        public ICommand EditNoteCommand { get; }
-        public ICommand DeleteNoteCommand { get; }
-        public ICommand AddFolderCommand { get; }
-        public ICommand DeleteFolderCommand { get; }
-
         public MainViewModel()
         {
             _db = new AppDbContextFactory().CreateDbContext(null);
-            var folderList = _db.Folders
-                                .Include(f => f.Subfolders)
-                                .ToList();
 
+            var folderList = _db.Folders.Include(f => f.Subfolders).ToList();
             Folders = new ObservableCollection<Folder>(folderList);
+
             Notes = new ObservableCollection<Note>();
 
             AddNoteCommand = new RelayCommand(_ => AddNote(), _ => SelectedFolder != null);
-            EditNoteCommand = new RelayCommand(_ => EditNote(), _ => SelectedNote != null);
-            DeleteNoteCommand = new RelayCommand(_ => DeleteNote(), _ => SelectedNote != null);
+            EditNoteCommand = new RelayCommand(_ => EditNote(), _ => SingleSelectedNote != null);
+            DeleteMarkedNotesCommand = new RelayCommand(_ => DeleteMarkedNotes(), _ => Notes.Any(n => n.IsMarkedForDeletion));
             AddFolderCommand = new RelayCommand(_ => AddFolder());
-            DeleteFolderCommand = new RelayCommand(_ => DeleteFolder(), _ => SelectedFolder != null);
+            DeleteMarkedFoldersCommand = new RelayCommand(_ => DeleteMarkedFolders(), _ => Folders.Any(f => f.IsMarkedForDeletion));
 
             if (Folders.Any())
                 SelectedFolder = Folders.First();
@@ -80,29 +79,29 @@ namespace Notatnik.ViewModels
 
             var notesInFolder = _db.Notes
                                    .Where(n => n.FolderId == SelectedFolder.Id)
+                                   .Include(n => n.ChecklistItems)
                                    .ToList();
             foreach (var note in notesInFolder)
+            {
+                note.IsMarkedForDeletion = false;
                 Notes.Add(note);
+            }
         }
 
         private void AddNote()
         {
-            // 1) Pokaż okno wyboru typu notatki
             var typeDlg = new SelectNoteTypeWindow();
-            if (typeDlg.ShowDialog() != true)
-                return;
+            if (typeDlg.ShowDialog() != true) return;
 
-            // 2) Utwórz notatkę z wybranym typem
             var note = new Note
             {
                 CreatedAt = DateTime.Now,
                 ModifiedAt = DateTime.Now,
                 FolderId = SelectedFolder.Id,
-                Type = typeDlg.SelectedType,  // ← NoteType z enum: CheckList, Regular, LongFormat :contentReference[oaicite:0]{index=0}
-                Content = string.Empty      // <<< zapobiegamy nullowi
+                Type = typeDlg.SelectedType,
+                Content = string.Empty
             };
 
-            // 3) Pokaż okno edycji szczegółów
             var vm = new NoteDetailsViewModel(note);
             var win = new NoteDetailsWindow(vm);
             if (win.ShowDialog() == true)
@@ -115,43 +114,57 @@ namespace Notatnik.ViewModels
 
         private void EditNote()
         {
-            var vm = new NoteDetailsViewModel(SelectedNote);
+            if (SingleSelectedNote == null) return;
+            var noteToEdit = SingleSelectedNote;
+
+            var vm = new NoteDetailsViewModel(noteToEdit);
             var win = new NoteDetailsWindow(vm);
             if (win.ShowDialog() == true)
             {
-                SelectedNote.ModifiedAt = DateTime.Now;
+                noteToEdit.ModifiedAt = DateTime.Now;
                 _db.SaveChanges();
                 LoadNotes();
             }
         }
 
-        private void DeleteNote()
+        private void DeleteMarkedNotes()
         {
-            _db.Notes.Remove(SelectedNote);
+            var marked = Notes.Where(n => n.IsMarkedForDeletion).ToList();
+            foreach (var note in marked)
+            {
+                _db.Notes.Remove(note);
+                Notes.Remove(note);
+            }
             _db.SaveChanges();
-            LoadNotes();
         }
 
         private void AddFolder()
         {
             var dlg = new FolderDetailsWindow();
-            if (dlg.ShowDialog() == true)
-            {
-                var folder = new Folder { Name = dlg.FolderName };
-                _db.Folders.Add(folder);
-                _db.SaveChanges();
-                Folders.Add(folder);
-                SelectedFolder = folder;
-            }
+            if (dlg.ShowDialog() != true) return;
+
+            var folder = new Folder { Name = dlg.FolderName };
+            _db.Folders.Add(folder);
+            _db.SaveChanges();
+            Folders.Add(folder);
+            SelectedFolder = folder;
         }
 
-        private void DeleteFolder()
+        private void DeleteMarkedFolders()
         {
-            if (SelectedFolder == null) return;
-            _db.Folders.Remove(SelectedFolder);
+            var marked = Folders.Where(f => f.IsMarkedForDeletion).ToList();
+            foreach (var folder in marked)
+            {
+                var notesInFolder = _db.Notes.Where(n => n.FolderId == folder.Id).ToList();
+                foreach (var n in notesInFolder)
+                    _db.Notes.Remove(n);
+
+                _db.Folders.Remove(folder);
+                Folders.Remove(folder);
+            }
             _db.SaveChanges();
-            Folders.Remove(SelectedFolder);
-            SelectedFolder = Folders.FirstOrDefault();
+            if (!Folders.Contains(SelectedFolder))
+                SelectedFolder = Folders.FirstOrDefault();
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
