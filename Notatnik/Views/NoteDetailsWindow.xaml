@@ -23,12 +23,12 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel>
 
-                <!-- Tytuł -->
+                <!-- Tytuł zawsze widoczny -->
                 <TextBlock Text="Tytuł:" FontWeight="Bold" Margin="0,0,0,5"/>
                 <TextBox Text="{Binding Note.Title, UpdateSourceTrigger=PropertyChanged}"
                          Margin="0,0,0,15"/>
 
-                <!-- Panel Checklist -->
+                <!-- 1. CheckListPanel: widoczny tylko gdy Note.Type == CheckList -->
                 <StackPanel Margin="0,0,0,15">
                     <StackPanel.Style>
                         <Style TargetType="StackPanel">
@@ -41,10 +41,33 @@
                             </Style.Triggers>
                         </Style>
                     </StackPanel.Style>
-                    <!-- ... zawartość checklisty jak wcześniej ... -->
+
+                    <TextBlock Text="Elementy listy (CheckList):" FontWeight="Bold" Margin="0,0,0,5"/>
+
+                    <ItemsControl ItemsSource="{Binding ChecklistItems}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                    <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                                              VerticalAlignment="Center"/>
+                                    <TextBox Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Width="380" Margin="5,0"/>
+                                    <Button Content="X"
+                                            Command="{Binding DataContext.RemoveItemCommand, 
+                                                      RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}"
+                                            Width="20" Height="20" Margin="5,0"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Button Content="Dodaj element"
+                            Command="{Binding AddItemCommand}"
+                            Margin="0,10,0,0" Width="110"/>
                 </StackPanel>
 
-                <!-- Panel Regular -->
+                <!-- 2. RegularPanel: widoczny tylko gdy Note.Type == Regular -->
                 <StackPanel Margin="0,0,0,15">
                     <StackPanel.Style>
                         <Style TargetType="StackPanel">
@@ -57,10 +80,15 @@
                             </Style.Triggers>
                         </Style>
                     </StackPanel.Style>
-                    <!-- ... zawartość zwykłej notatki jak wcześniej ... -->
+
+                    <TextBlock Text="Treść notatki (Regular):" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding Note.Content, UpdateSourceTrigger=PropertyChanged}"
+                             AcceptsReturn="True"
+                             VerticalScrollBarVisibility="Auto"
+                             Height="200"/>
                 </StackPanel>
 
-                <!-- Panel LongFormat -->
+                <!-- 3. LongFormatPanel: widoczny tylko gdy Note.Type == LongFormat -->
                 <StackPanel Margin="0,0,0,15">
                     <StackPanel.Style>
                         <Style TargetType="StackPanel">
@@ -74,7 +102,9 @@
                         </Style>
                     </StackPanel.Style>
 
-                    <!-- Pasek narzędzi formatowania -->
+                    <TextBlock Text="Formatowana treść (LongFormat):" FontWeight="Bold" Margin="0,0,0,5"/>
+
+                    <!-- Pasek narzędzi do formatowania -->
                     <ToolBar Margin="0,0,0,5">
                         <Button Command="{x:Static ec:EditingCommands.ToggleBold}"
                                 CommandTarget="{Binding ElementName=RichTextEditor}"
@@ -86,7 +116,6 @@
                                 Content="I"
                                 FontStyle="Italic"
                                 Width="25" ToolTip="Kursywa"/>
-                        <!-- POPRAWIONY PRZYCISK PODKREŚLENIA -->
                         <Button Command="{x:Static ec:EditingCommands.ToggleUnderline}"
                                 CommandTarget="{Binding ElementName=RichTextEditor}"
                                 Width="25" ToolTip="Podkreślenie">
@@ -105,7 +134,7 @@
                                 Width="25" ToolTip="Zmniejsz wcięcie"/>
                     </ToolBar>
 
-                    <!-- RichTextBox do formatowania -->
+                    <!-- RichTextBox do formatowania długiej notatki -->
                     <RichTextBox x:Name="RichTextEditor"
                                  Height="300"
                                  VerticalScrollBarVisibility="Auto"/>
