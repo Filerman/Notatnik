@@ -13,44 +13,44 @@ namespace Notatnik.Views
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = new MainViewModel();
+            // DataContext ustawia się już w XAML, nie nadpisujemy go ponownie
         }
 
-        // Gdy użytkownik kliknie w wiersz folderu (z wyjątkiem checkboxa), zmieniamy SelectedFolder
+        // Jeśli użytkownik zmienia zaznaczenie wierszy ręcznie: 
+        // opcjonalnie możemy zaktualizować stan header‐checkboxa (czysto kosmetycznie).
         private void ListViewFolders_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (ViewModel == null) return;
-
             if (ListViewFolders.SelectedItems.Count == 1)
                 ViewModel.SelectedFolder = ListViewFolders.SelectedItem as Folder;
         }
 
-        // Nagłówkowy checkbox w kolumnie Folderów: zaznacz wszystkie foldery
-        private void CheckAllFolders_Checked(object sender, RoutedEventArgs e)
+        // Nagłówek: zaznacz wszystkie foldery
+        private void HeaderCheckboxFolders_Checked(object sender, RoutedEventArgs e)
         {
             if (ViewModel == null) return;
             foreach (var folder in ViewModel.Folders)
                 folder.IsMarkedForDeletion = true;
         }
 
-        // Nagłówkowy checkbox w kolumnie Folderów: odznacz wszystkie foldery
-        private void CheckAllFolders_Unchecked(object sender, RoutedEventArgs e)
+        // Nagłówek: odznacz wszystkie foldery
+        private void HeaderCheckboxFolders_Unchecked(object sender, RoutedEventArgs e)
         {
             if (ViewModel == null) return;
             foreach (var folder in ViewModel.Folders)
                 folder.IsMarkedForDeletion = false;
         }
 
-        // Nagłówkowy checkbox w kolumnie Notatek: zaznacz wszystkie notatki
-        private void CheckAllNotes_Checked(object sender, RoutedEventArgs e)
+        // Nagłówek: zaznacz wszystkie notatki
+        private void HeaderCheckboxNotes_Checked(object sender, RoutedEventArgs e)
         {
             if (ViewModel == null) return;
             foreach (var note in ViewModel.Notes)
                 note.IsMarkedForDeletion = true;
         }
 
-        // Nagłówkowy checkbox w kolumnie Notatek: odznacz wszystkie notatki
-        private void CheckAllNotes_Unchecked(object sender, RoutedEventArgs e)
+        // Nagłówek: odznacz wszystkie notatki
+        private void HeaderCheckboxNotes_Unchecked(object sender, RoutedEventArgs e)
         {
             if (ViewModel == null) return;
             foreach (var note in ViewModel.Notes)

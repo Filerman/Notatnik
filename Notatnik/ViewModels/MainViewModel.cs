@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Windows;
 using System.Windows.Input;
 using Microsoft.EntityFrameworkCore;
 using Notatnik.Commands;
@@ -57,6 +58,7 @@ namespace Notatnik.ViewModels
         {
             _db = new AppDbContextFactory().CreateDbContext(null);
 
+            // Wczytanie istniejących folderów (raz, bo foldery trzymamy w głównej liście)
             var folderList = _db.Folders.Include(f => f.Subfolders).ToList();
             Folders = new ObservableCollection<Folder>(folderList);
 
@@ -68,6 +70,7 @@ namespace Notatnik.ViewModels
             AddFolderCommand = new RelayCommand(_ => AddFolder());
             DeleteMarkedFoldersCommand = new RelayCommand(_ => DeleteMarkedFolders(), _ => Folders.Any(f => f.IsMarkedForDeletion));
 
+            // Jeśli są jakieś foldery, ustaw pierwszy jako wybrany
             if (Folders.Any())
                 SelectedFolder = Folders.First();
         }
@@ -77,10 +80,12 @@ namespace Notatnik.ViewModels
             Notes.Clear();
             if (SelectedFolder == null) return;
 
+            // Pobierz notatki z DB dla wybranego folderu
             var notesInFolder = _db.Notes
                                    .Where(n => n.FolderId == SelectedFolder.Id)
                                    .Include(n => n.ChecklistItems)
                                    .ToList();
+
             foreach (var note in notesInFolder)
             {
                 note.IsMarkedForDeletion = false;
@@ -129,8 +134,21 @@ namespace Notatnik.ViewModels
 
         private void DeleteMarkedNotes()
         {
-            var marked = Notes.Where(n => n.IsMarkedForDeletion).ToList();
-            foreach (var note in marked)
+            // Zbierz wszystkie zaznaczone notatki
+            var markedNotes = Notes.Where(n => n.IsMarkedForDeletion).ToList();
+            if (!markedNotes.Any()) return;
+
+            // Potwierdzenie usunięcia
+            var wynik = MessageBox.Show(
+                $"Czy na pewno chcesz usunąć {markedNotes.Count} zaznaczoną{(markedNotes.Count == 1 ? "ą" : "e")} notatkę(i)?",
+                "Potwierdź usunięcie",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (wynik != MessageBoxResult.Yes) return;
+
+            // Usuń z bazy i z kolekcji
+            foreach (var note in markedNotes)
             {
                 _db.Notes.Remove(note);
                 Notes.Remove(note);
@@ -146,25 +164,61 @@ namespace Notatnik.ViewModels
             var folder = new Folder { Name = dlg.FolderName };
             _db.Folders.Add(folder);
             _db.SaveChanges();
+
             Folders.Add(folder);
             SelectedFolder = folder;
         }
 
         private void DeleteMarkedFolders()
         {
-            var marked = Folders.Where(f => f.IsMarkedForDeletion).ToList();
-            foreach (var folder in marked)
-            {
-                var notesInFolder = _db.Notes.Where(n => n.FolderId == folder.Id).ToList();
-                foreach (var n in notesInFolder)
-                    _db.Notes.Remove(n);
+            // Zbierz wszystkie zaznaczone foldery
+            var markedFolders = Folders.Where(f => f.IsMarkedForDeletion).ToList();
+            if (!markedFolders.Any()) return;
 
-                _db.Folders.Remove(folder);
+            // Potwierdzenie usunięcia
+            var wynik = MessageBox.Show(
+                $"Czy na pewno chcesz usunąć {markedFolders.Count} zaznaczony{(markedFolders.Count == 1 ? "y" : "e")} folder(y) wraz z całą zawartością?",
+                "Potwierdź usunięcie",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (wynik != MessageBoxResult.Yes) return;
+
+            // Dla każdego folderu: usuń notatki i podfoldery
+            foreach (var folder in markedFolders)
+            {
+                DeleteFolderRecursive(folder);
                 Folders.Remove(folder);
             }
+
             _db.SaveChanges();
+
+            // Jeśli wybrany folder został usunięty, ustaw nowy SelectedFolder
             if (!Folders.Contains(SelectedFolder))
                 SelectedFolder = Folders.FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Rekurencyjne usuwanie folderu, jego podfolderów i notatek w nich zawartych.
+        /// </summary>
+        private void DeleteFolderRecursive(Folder folder)
+        {
+            // Najpierw usuń wszystkie notatki w bieżącym folderze
+            var notesInFolder = _db.Notes.Where(n => n.FolderId == folder.Id).ToList();
+            foreach (var n in notesInFolder)
+            {
+                _db.Notes.Remove(n);
+            }
+
+            // Następnie weź podfoldery (z bazy) i usuń je rekurencyjnie
+            var subfolders = _db.Folders.Where(f => f.ParentFolderId == folder.Id).ToList();
+            foreach (var sub in subfolders)
+            {
+                DeleteFolderRecursive(sub); // rekurencja
+            }
+
+            // Na koniec usuń aktualny folder
+            _db.Folders.Remove(folder);
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

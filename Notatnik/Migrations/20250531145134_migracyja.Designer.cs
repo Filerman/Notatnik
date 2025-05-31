@@ -11,8 +11,8 @@ using Notatnik.Data;
 namespace Notatnik.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250527005853_dupa")]
-    partial class dupa
+    [Migration("20250531145134_migracyja")]
+    partial class migracyja
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

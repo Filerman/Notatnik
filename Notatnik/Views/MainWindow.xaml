@@ -1,171 +1,153 @@
 ﻿<Window x:Class="Notatnik.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:viewModels="clr-namespace:Notatnik.ViewModels"
-        xmlns:models="clr-namespace:Notatnik.Models"
-        Title="Notatnik"
+        xmlns:vm="clr-namespace:Notatnik.ViewModels"
+        Title="Notatnik" Height="600" Width="900"
         WindowStartupLocation="CenterScreen"
-        WindowState="Maximized"
-        Height="700"
-        Width="1200">
+        FontFamily="Segoe UI" FontSize="12">
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
 
-    <DockPanel>
-        <!-- Pasek narzędzi -->
-        <ToolBar DockPanel.Dock="Top" Padding="5">
-            <Button Content="Nowa notatka" Command="{Binding AddNoteCommand}" Margin="2"/>
-            <Button Content="Edytuj notatkę" Command="{Binding EditNoteCommand}" Margin="2"/>
-            <Button Content="Usuń wybrane notatki" Command="{Binding DeleteMarkedNotesCommand}" Margin="2"/>
-            <Separator/>
-            <Button Content="Nowy folder" Command="{Binding AddFolderCommand}" Margin="2"/>
-            <Button Content="Usuń wybrane foldery" Command="{Binding DeleteMarkedFoldersCommand}" Margin="2"/>
-        </ToolBar>
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="3*" />
+            <ColumnDefinition Width="10" />
+            <ColumnDefinition Width="5*" />
+        </Grid.ColumnDefinitions>
 
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="300"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+        <!-- Sekcja Foldery -->
+        <GroupBox Header="Foldery" FontWeight="Bold"
+                  Grid.Column="0" Margin="0,0,5,0"
+                  BorderBrush="LightGray" BorderThickness="1">
+            <Grid Margin="5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-            <!-- ===== Lewy panel: Lista folderów ===== -->
-            <Border Grid.Column="0" Margin="5" BorderBrush="LightGray" BorderThickness="1" CornerRadius="4">
+                <!-- Lista folderów -->
                 <ListView x:Name="ListViewFolders"
                           ItemsSource="{Binding Folders}"
                           SelectedItem="{Binding SelectedFolder}"
-                          Background="WhiteSmoke"
-                          Margin="5"
-                          SelectionChanged="ListViewFolders_SelectionChanged">
-
-                    <!-- Styl wiersza: pełne podświetlenie i kolor, gdy IsMarkedForDeletion -->
-                    <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                            <Setter Property="VerticalContentAlignment" Value="Center"/>
-                            <Setter Property="Padding" Value="2,1"/>
-                            <Setter Property="Margin" Value="0"/>
-                            <Style.Triggers>
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="Background" Value="#AAD7FF"/>
-                                </Trigger>
-                                <DataTrigger Binding="{Binding IsMarkedForDeletion}" Value="True">
-                                    <Setter Property="Background" Value="#FFDDDDFF"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ListView.ItemContainerStyle>
-
+                          SelectionMode="Single"
+                          SelectedIndex="0"
+                          Grid.Row="0">
                     <ListView.View>
-                        <GridView AllowsColumnReorder="False">
-                            <!-- Kolumna: Select All / Usuń? (nagłówkowy checkbox + checkbox w wierszach) -->
-                            <GridViewColumn Width="60">
+                        <GridView>
+                            <!-- Kolumna z checkboxami -->
+                            <GridViewColumn Width="30">
                                 <GridViewColumn.Header>
-                                    <!-- Nagłówkowy checkbox do zaznaczania/odznaczania wszystkich folderów -->
-                                    <CheckBox x:Name="CheckAllFolders"
-                                              ToolTip="Zaznacz lub odznacz wszystkie foldery"
-                                              Checked="CheckAllFolders_Checked"
-                                              Unchecked="CheckAllFolders_Unchecked"
-                                              VerticalAlignment="Center"
-                                              HorizontalAlignment="Center"/>
+                                    <CheckBox x:Name="HeaderCheckboxFolders"
+                                              Checked="HeaderCheckboxFolders_Checked"
+                                              Unchecked="HeaderCheckboxFolders_Unchecked"
+                                              ToolTip="Zaznacz/odznacz wszystkie foldery"/>
                                 </GridViewColumn.Header>
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <CheckBox IsChecked="{Binding IsMarkedForDeletion, Mode=TwoWay}"
-                                                  VerticalAlignment="Center"
-                                                  HorizontalAlignment="Center"/>
+                                        <CheckBox IsChecked="{Binding IsMarkedForDeletion, Mode=TwoWay}"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
 
-                            <!-- Kolumna: Nazwa folderu -->
+                            <!-- Nazwa folderu -->
                             <GridViewColumn Header="Nazwa folderu" Width="200"
-                                            DisplayMemberBinding="{Binding Name}"/>
+                                            DisplayMemberBinding="{Binding Name}" />
                         </GridView>
                     </ListView.View>
                 </ListView>
-            </Border>
 
-            <!-- ===== Prawy panel: Lista notatek ===== -->
-            <Border Grid.Column="1" Margin="5" BorderBrush="LightGray" BorderThickness="1" CornerRadius="4">
+                <!-- Przyciski pod listą -->
+                <StackPanel Orientation="Horizontal" Grid.Row="1"
+                            HorizontalAlignment="Right" Margin="0,5,0,0">
+                    <Button Content="Dodaj folder" Width="100" Margin="0,0,5,0"
+                            Command="{Binding AddFolderCommand}"/>
+                    <Button Content="Usuń zaznaczone" Width="120"
+                            Command="{Binding DeleteMarkedFoldersCommand}"/>
+                </StackPanel>
+            </Grid>
+        </GroupBox>
+
+        <!-- Separator pionowy -->
+        <GridSplitter Grid.Column="1" Width="5"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Stretch"
+                      ShowsPreview="True"
+                      Background="LightGray"/>
+
+        <!-- Sekcja Notatki -->
+        <GroupBox Header="Notatki" FontWeight="Bold"
+                  Grid.Column="2" Margin="5,0,0,0"
+                  BorderBrush="LightGray" BorderThickness="1">
+            <Grid Margin="5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Lista notatek -->
                 <ListView x:Name="ListViewNotes"
                           ItemsSource="{Binding Notes}"
                           SelectedItem="{Binding SingleSelectedNote}"
-                          Background="WhiteSmoke"
-                          Margin="5">
-
-                    <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                            <Setter Property="VerticalContentAlignment" Value="Center"/>
-                            <Setter Property="Padding" Value="2,1"/>
-                            <Setter Property="Margin" Value="0"/>
-                            <Style.Triggers>
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="Background" Value="#AAD7FF"/>
-                                </Trigger>
-                                <DataTrigger Binding="{Binding IsMarkedForDeletion}" Value="True">
-                                    <Setter Property="Background" Value="#FFDDDDFF"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ListView.ItemContainerStyle>
-
+                          SelectionMode="Single"
+                          Grid.Row="0">
                     <ListView.View>
-                        <GridView AllowsColumnReorder="False">
-                            <!-- Kolumna: Select All / Usuń? (nagłówkowy checkbox + checkbox w wierszach) -->
-                            <GridViewColumn Width="60">
+                        <GridView>
+                            <!-- Kolumna z checkboxami -->
+                            <GridViewColumn Width="30">
                                 <GridViewColumn.Header>
-                                    <!-- Nagłówkowy checkbox do zaznaczania/odznaczania wszystkich notatek -->
-                                    <CheckBox x:Name="CheckAllNotes"
-                                              ToolTip="Zaznacz lub odznacz wszystkie notatki"
-                                              Checked="CheckAllNotes_Checked"
-                                              Unchecked="CheckAllNotes_Unchecked"
-                                              VerticalAlignment="Center"
-                                              HorizontalAlignment="Center"/>
+                                    <CheckBox x:Name="HeaderCheckboxNotes"
+                                              Checked="HeaderCheckboxNotes_Checked"
+                                              Unchecked="HeaderCheckboxNotes_Unchecked"
+                                              ToolTip="Zaznacz/odznacz wszystkie notatki"/>
                                 </GridViewColumn.Header>
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <CheckBox IsChecked="{Binding IsMarkedForDeletion, Mode=TwoWay}"
-                                                  VerticalAlignment="Center"
-                                                  HorizontalAlignment="Center"/>
+                                        <CheckBox IsChecked="{Binding IsMarkedForDeletion, Mode=TwoWay}"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
 
-                            <!-- Kolumna: Tytuł -->
-                            <GridViewColumn Header="Tytuł" Width="250"
-                                            DisplayMemberBinding="{Binding Title}"/>
+                            <!-- Tytuł notatki -->
+                            <GridViewColumn Header="Tytuł" Width="200"
+                                            DisplayMemberBinding="{Binding Title}" />
 
-                            <!-- Kolumna: Podgląd -->
-                            <GridViewColumn Header="Podgląd" Width="350">
+                            <!-- Podgląd / snippet -->
+                            <GridViewColumn Header="Podgląd" Width="250"
+                                            DisplayMemberBinding="{Binding Snippet}" />
+
+                            <!-- Data utworzenia -->
+                            <GridViewColumn Header="Utworzono" Width="120">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding Snippet}"
-                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding CreatedAt, StringFormat=\{0:yyyy-MM-dd HH:mm\}}"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
 
-                            <!-- Kolumna: Ostatnia edycja (data + godzina) -->
-                            <GridViewColumn Header="Ostatnia edycja" Width="150"
-                                            DisplayMemberBinding="{Binding ModifiedAt, StringFormat=\{0:yyyy-MM-dd HH:mm\}}"/>
-
-                            <!-- Kolumna: Szczegóły (przycisk „Otwórz”) -->
-                            <GridViewColumn Header="Szczegóły" Width="100">
+                            <!-- Data modyfikacji -->
+                            <GridViewColumn Header="Zmodyfikowano" Width="120">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="Otwórz"
-                                                Command="{Binding DataContext.EditNoteCommand,
-                                                                  RelativeSource={RelativeSource AncestorType=Window}}"
-                                                CommandParameter="{Binding}"
-                                                Focusable="False"
-                                                Padding="2" Margin="0"/>
+                                        <TextBlock Text="{Binding ModifiedAt, StringFormat=\{0:yyyy-MM-dd HH:mm\}}"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-
                         </GridView>
                     </ListView.View>
                 </ListView>
-            </Border>
-        </Grid>
-    </DockPanel>
+
+                <!-- Przyciski pod listą -->
+                <StackPanel Orientation="Horizontal" Grid.Row="1"
+                            HorizontalAlignment="Right" Margin="0,5,0,0">
+                    <Button Content="Dodaj notatkę" Width="100" Margin="0,0,5,0"
+                            Command="{Binding AddNoteCommand}"/>
+                    <Button Content="Edytuj notatkę" Width="100" Margin="0,0,5,0"
+                            Command="{Binding EditNoteCommand}"/>
+                    <Button Content="Usuń zaznaczone" Width="120"
+                            Command="{Binding DeleteMarkedNotesCommand}"/>
+                </StackPanel>
+            </Grid>
+        </GroupBox>
+    </Grid>
 </Window>
