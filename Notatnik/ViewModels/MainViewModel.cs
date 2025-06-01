@@ -83,24 +83,25 @@ namespace Notatnik.ViewModels
         /// Ładuje z bazy notatki dla aktualnie wybranego folderu.
         /// Po pobraniu każdej notatki ustawiamy IsMarkedForDeletion = false w pamięci.
         /// </summary>
+        // … (nagłówki i ususingi bez zmian)
+
         public void LoadNotes()
         {
             Notes.Clear();
-            if (SelectedFolder == null)
-                return;
+            if (SelectedFolder == null) return;
 
-            // 1) Pobieramy WSZYSTKIE notatki w danym folderze – bez filtra po IsMarkedForDeletion
             var notesInFolder = _db.Notes
                                    .Where(n => n.FolderId == SelectedFolder.Id)
-                                   .ToList(); // :contentReference[oaicite:1]{index=1}
+                                   .Include(n => n.ChecklistItems)   // ← DOCIĄGAMY checklistę
+                                   .ToList();
 
-            // 2) Ustawiamy domyślnie IsMarkedForDeletion = false, a potem dodajemy do ObservableCollection
             foreach (var note in notesInFolder)
             {
                 note.IsMarkedForDeletion = false;
                 Notes.Add(note);
             }
         }
+
 
         private void AddNote()
         {
