@@ -1,8 +1,8 @@
-﻿using System.Linq;
-using System.Windows;
-using System.Windows.Controls;
+﻿using System.Windows;
+using System.Windows.Input;
 using Notatnik.Models;
 using Notatnik.ViewModels;
+using Notatnik.Views;
 
 namespace Notatnik.Views
 {
@@ -13,19 +13,11 @@ namespace Notatnik.Views
         public MainWindow()
         {
             InitializeComponent();
-            // DataContext ustawia się już w XAML, nie nadpisujemy go ponownie
+            // DataContext jest ustawiany w XAML, nie nadpisujemy go tutaj.
         }
 
-        // Jeśli użytkownik zmienia zaznaczenie wierszy ręcznie: 
-        // opcjonalnie możemy zaktualizować stan header‐checkboxa (czysto kosmetycznie).
-        private void ListViewFolders_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (ViewModel == null) return;
-            if (ListViewFolders.SelectedItems.Count == 1)
-                ViewModel.SelectedFolder = ListViewFolders.SelectedItem as Folder;
-        }
+        #region Nagłówkowe checkboxy (Foldery)
 
-        // Nagłówek: zaznacz wszystkie foldery
         private void HeaderCheckboxFolders_Checked(object sender, RoutedEventArgs e)
         {
             if (ViewModel == null) return;
@@ -33,7 +25,6 @@ namespace Notatnik.Views
                 folder.IsMarkedForDeletion = true;
         }
 
-        // Nagłówek: odznacz wszystkie foldery
         private void HeaderCheckboxFolders_Unchecked(object sender, RoutedEventArgs e)
         {
             if (ViewModel == null) return;
@@ -41,7 +32,10 @@ namespace Notatnik.Views
                 folder.IsMarkedForDeletion = false;
         }
 
-        // Nagłówek: zaznacz wszystkie notatki
+        #endregion
+
+        #region Nagłówkowe checkboxy (Notatki)
+
         private void HeaderCheckboxNotes_Checked(object sender, RoutedEventArgs e)
         {
             if (ViewModel == null) return;
@@ -49,12 +43,42 @@ namespace Notatnik.Views
                 note.IsMarkedForDeletion = true;
         }
 
-        // Nagłówek: odznacz wszystkie notatki
         private void HeaderCheckboxNotes_Unchecked(object sender, RoutedEventArgs e)
         {
             if (ViewModel == null) return;
             foreach (var note in ViewModel.Notes)
                 note.IsMarkedForDeletion = false;
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Obsługa dwukliku w liście notatek – otwiera NoteDetailsWindow w trybie edycji.
+        /// </summary>
+        private void ListViewNotes_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (ViewModel == null) return;
+
+            // Pobranie zaznaczonej notatki
+            var selectedNote = ViewModel.SingleSelectedNote;
+            if (selectedNote == null) return;
+
+            // Tworzymy ViewModel dla szczegółów notatki
+            var noteVm = new NoteDetailsViewModel(selectedNote);
+
+            // Otwieramy okno edycji (NoteDetailsWindow)
+            var detailsWindow = new NoteDetailsWindow(noteVm)
+            {
+                Owner = this,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+            bool? result = detailsWindow.ShowDialog();
+
+            // Jeżeli użytkownik zapisał (DialogResult == true), odświeżamy listę notatek
+            if (result == true)
+            {
+                ViewModel.LoadNotes();
+            }
         }
     }
 }

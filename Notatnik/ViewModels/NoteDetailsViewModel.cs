@@ -1,68 +1,96 @@
 ﻿using System;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Input;
+using Microsoft.EntityFrameworkCore;
 using Notatnik.Commands;
+using Notatnik.Data;
 using Notatnik.Models;
 
 namespace Notatnik.ViewModels
 {
     public class NoteDetailsViewModel : INotifyPropertyChanged
     {
+        private readonly AppDbContext _db;
         public Note Note { get; }
 
-        // kolekcja pozycji checklisty
-        public ObservableCollection<ChecklistItem> ChecklistItems { get; }
-
-        public ICommand AddItemCommand { get; }
-        public ICommand RemoveItemCommand { get; }
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
 
+        /// <summary>
+        /// Zdarzenie do zasygnalizowania View (NoteDetailsWindow), że należy się zamknąć.
+        /// Parametr bool: true = zapisz, false = anuluj.
+        /// </summary>
+        public event EventHandler<bool> RequestClose;
+
         public NoteDetailsViewModel(Note note)
         {
+            // Tworzymy nowy kontekst (oddzielny od tego w MainViewModel)
+            _db = new AppDbContextFactory().CreateDbContext(null);
+
+            // Przypisujemy przekazaną notatkę (może być nowa lub już istniejąca)
             Note = note;
 
-            // inicjalizacja kolekcji
-            ChecklistItems = new ObservableCollection<ChecklistItem>(note.Type == NoteType.CheckList
-                ? note.ChecklistItems
-                : new ChecklistItem[0]);
-
-            // komendy
-            AddItemCommand = new RelayCommand(_ => AddItem());
-            RemoveItemCommand = new RelayCommand(o => RemoveItem(o as ChecklistItem), o => o is ChecklistItem);
-            SaveCommand = new RelayCommand(_ => OnRequestClose(true));
-            CancelCommand = new RelayCommand(_ => OnRequestClose(false));
+            // Inicjalizujemy komendy
+            SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
+            CancelCommand = new RelayCommand(_ => Cancel());
         }
 
-        private void AddItem()
+        /// <summary>
+        /// Sprawdza, czy można zapisać notatkę (np. tytuł nie jest pusty).
+        /// </summary>
+        private bool CanSave()
         {
-            var item = new ChecklistItem
+            return !string.IsNullOrWhiteSpace(Note.Title);
+        }
+
+        /// <summary>
+        /// Logika zapisu notatki do bazy.
+        /// Rozpoznajemy, czy jest to nowa notatka (Note.Id == 0), czy edycja.
+        /// W przypadku edycji upewniamy się, że nawigacyjna referencja Folder jest odłączona,
+        /// aby EF nie próbował wstawić folderu ponownie.
+        /// </summary>
+        private void Save()
+        {
+            // Ustawiamy datę modyfikacji
+            Note.ModifiedAt = DateTime.Now;
+
+            if (Note.Id == 0)
             {
-                Text = string.Empty,
-                IsChecked = false,
-                Note = Note
-            };
-            Note.ChecklistItems.Add(item);
-            ChecklistItems.Add(item);
-            OnPropertyChanged(nameof(ChecklistItems));
+                // Nowa notatka – dodajemy
+                _db.Notes.Add(Note);
+            }
+            else
+            {
+                // Istniejąca notatka – edytujemy
+                // Odłączamy nawigacyjną referencję do Folder, żeby nie próbować wstawić folderu
+                Note.Folder = null;
+
+                // Załączamy notatkę i oznaczamy jako Modified
+                _db.Notes.Attach(Note);
+                _db.Entry(Note).State = EntityState.Modified;
+            }
+
+            // Zapisujemy zmiany w kontekście
+            _db.SaveChanges();
+
+            // Sygnalizujemy oknu, że zapis zakończony sukcesem
+            RequestClose?.Invoke(this, true);
         }
 
-        private void RemoveItem(ChecklistItem item)
+        /// <summary>
+        /// Anulowanie – zwracamy false, co spowoduje zamknięcie okna bez zapisu.
+        /// </summary>
+        private void Cancel()
         {
-            if (item == null) return;
-            Note.ChecklistItems.Remove(item);
-            ChecklistItems.Remove(item);
-            OnPropertyChanged(nameof(ChecklistItems));
+            RequestClose?.Invoke(this, false);
         }
+
+        #region INotifyPropertyChanged
 
         public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged(string name) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        protected void OnPropertyChanged(string propertyName) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        // zdarzenie do zamknięcia okna
-        public event EventHandler<bool> RequestClose;
-        private void OnRequestClose(bool result) =>
-            RequestClose?.Invoke(this, result);
+        #endregion
     }
 }

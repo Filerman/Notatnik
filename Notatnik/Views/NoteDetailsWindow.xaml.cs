@@ -1,136 +1,32 @@
-﻿using System;
-using System.IO;
-using System.Text;
-using System.Windows;
-using System.Windows.Documents;
-using Notatnik.Models;
+﻿using System.Windows;
 using Notatnik.ViewModels;
 
 namespace Notatnik.Views
 {
     public partial class NoteDetailsWindow : Window
     {
-        private readonly NoteDetailsViewModel _vm;
-
-        public NoteDetailsWindow(NoteDetailsViewModel vm)
+        public NoteDetailsWindow(NoteDetailsViewModel viewModel)
         {
             InitializeComponent();
+            DataContext = viewModel;
 
-            _vm = vm;
-            DataContext = vm;
-
-            _vm.RequestClose += OnVmRequestClose;
-            Loaded += OnLoaded;
+            // Subskrybujemy RequestClose, żeby zamknąć okno z odpowiednim DialogResult
+            viewModel.RequestClose += ViewModel_RequestClose;
         }
 
-        private void OnLoaded(object sender, RoutedEventArgs e)
+        private void ViewModel_RequestClose(object sender, bool shouldSave)
         {
-            // Jeśli edytujemy LongFormat i mamy już jakąś zawartość – załaduj ją do RichTextEditor
-            if (_vm.Note.Type == NoteType.LongFormat
-                && !string.IsNullOrEmpty(_vm.Note.Content))
-            {
-                var range = new TextRange(RichTextEditor.Document.ContentStart, RichTextEditor.Document.ContentEnd);
-                try
-                {
-                    using var ms = new MemoryStream(Encoding.UTF8.GetBytes(_vm.Note.Content));
-                    range.Load(ms, DataFormats.Xaml);
-                }
-                catch
-                {
-                    // Jeżeli XAML jest uszkodzony, pozostaw pusty dokument
-                }
-            }
+            // Jeśli shouldSave == true, użytkownik kliknął „Zapisz”; w przeciwnym razie „Anuluj”
+            this.DialogResult = shouldSave;
+            this.Close();
         }
 
-        private void OnVmRequestClose(object sender, bool dialogResult)
+        protected override void OnClosed(System.EventArgs e)
         {
-            if (dialogResult)
+            base.OnClosed(e);
+            if (DataContext is NoteDetailsViewModel vm)
             {
-                // Przy zapisie: jeśli LongFormat → odczytaj XAML z RichTextBoxa
-                if (_vm.Note.Type == NoteType.LongFormat)
-                {
-                    var range = new TextRange(RichTextEditor.Document.ContentStart, RichTextEditor.Document.ContentEnd);
-                    using var ms = new MemoryStream();
-                    range.Save(ms, DataFormats.Xaml);
-                    _vm.Note.Content = Encoding.UTF8.GetString(ms.ToArray());
-                }
-                // W trybach Regular i CheckList bindingi zrobią resztę
-            }
-
-            DialogResult = dialogResult;
-            Close();
-        }
-
-        /// <summary>
-        /// Zwiększa wcięcie wszystkich akapitów znajdujących się w zaznaczeniu o 20px.
-        /// </summary>
-        private void IncreaseIndentation_Click(object sender, RoutedEventArgs e)
-        {
-            // Najpierw ustawiamy fokus w RichTextEditor, żeby mieć aktualne zaznaczenie
-            RichTextEditor.Focus();
-
-            var selection = RichTextEditor.Selection;
-            if (selection.IsEmpty)
-            {
-                // Jeśli nie ma zaznaczenia, po prostu weź akapit z kursora
-                if (RichTextEditor.CaretPosition.Paragraph is Paragraph singlePara)
-                {
-                    singlePara.TextIndent += 20;
-                }
-                return;
-            }
-
-            // Pobieramy początek i koniec zaznaczenia
-            TextPointer selStart = selection.Start;
-            TextPointer selEnd = selection.End;
-
-            // Iterujemy po wszystkich blokach w dokumencie, szukając paragrafów
-            foreach (Block block in RichTextEditor.Document.Blocks)
-            {
-                if (block is Paragraph para)
-                {
-                    // Sprawdzamy, czy ten paragraf wchodzi w zakres zaznaczenia:
-                    // Warunek „intersekcji”:
-                    // para.ContentEnd > selStart  AND  para.ContentStart < selEnd
-                    if (para.ContentEnd.CompareTo(selStart) > 0
-                        && para.ContentStart.CompareTo(selEnd) < 0)
-                    {
-                        para.TextIndent += 20;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Zmniejsza wcięcie wszystkich akapitów w zaznaczeniu o 20px (maksymalnie do 0).
-        /// </summary>
-        private void DecreaseIndentation_Click(object sender, RoutedEventArgs e)
-        {
-            RichTextEditor.Focus();
-
-            var selection = RichTextEditor.Selection;
-            if (selection.IsEmpty)
-            {
-                if (RichTextEditor.CaretPosition.Paragraph is Paragraph singlePara)
-                {
-                    singlePara.TextIndent = Math.Max(0, singlePara.TextIndent - 20);
-                }
-                return;
-            }
-
-            TextPointer selStart = selection.Start;
-            TextPointer selEnd = selection.End;
-
-            foreach (Block block in RichTextEditor.Document.Blocks)
-            {
-                if (block is Paragraph para)
-                {
-                    if (para.ContentEnd.CompareTo(selStart) > 0
-                        && para.ContentStart.CompareTo(selEnd) < 0)
-                    {
-                        para.TextIndent = Math.Max(0, para.TextIndent - 20);
-                    }
-                }
+                vm.RequestClose -= ViewModel_RequestClose;
             }
         }
     }

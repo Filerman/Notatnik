@@ -59,18 +59,24 @@ namespace Notatnik.Models
                         return string.Empty;
 
                     case NoteType.LongFormat:
-                        if (!string.IsNullOrEmpty(Content))
+                        // Sprawdzamy, czy Content nie jest pusty i czy zaczyna się od poprawnego nagłówka XAML
+                        if (!string.IsNullOrEmpty(Content)
+                            && Content.TrimStart().StartsWith("<FlowDocument", StringComparison.OrdinalIgnoreCase))
                         {
                             try
                             {
                                 var flowDoc = (FlowDocument)XamlReader.Parse(Content);
                                 var textRange = new TextRange(flowDoc.ContentStart, flowDoc.ContentEnd);
-                                var plain = textRange.Text.Trim().Replace("\r", "").Replace("\n", " ");
-                                if (plain.Length <= 100) return plain;
+                                var plain = textRange.Text.Trim()
+                                                      .Replace("\r", "")
+                                                      .Replace("\n", " ");
+                                if (plain.Length <= 100)
+                                    return plain;
                                 return plain.Substring(0, 100) + ".";
                             }
                             catch
                             {
+                                // Gdy parsowanie XAML się nie powiedzie, zwracamy pusty ciąg
                                 return string.Empty;
                             }
                         }
@@ -79,8 +85,11 @@ namespace Notatnik.Models
                     case NoteType.Regular:
                         if (!string.IsNullOrEmpty(Content))
                         {
-                            var plain = Content.Trim().Replace("\r", "").Replace("\n", " ");
-                            if (plain.Length <= 100) return plain;
+                            var plain = Content.Trim()
+                                               .Replace("\r", "")
+                                               .Replace("\n", " ");
+                            if (plain.Length <= 100)
+                                return plain;
                             return plain.Substring(0, 100) + ".";
                         }
                         return string.Empty;

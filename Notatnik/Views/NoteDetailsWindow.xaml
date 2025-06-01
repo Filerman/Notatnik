@@ -1,179 +1,47 @@
 ﻿<Window x:Class="Notatnik.Views.NoteDetailsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:models="clr-namespace:Notatnik.Models"
-        xmlns:ec="clr-namespace:System.Windows.Documents;assembly=PresentationFramework"
-        Title="Szczegóły notatki" Height="550" Width="650"
-        WindowStartupLocation="CenterOwner">
+        Title="Edytuj notatkę"
+        Height="450"
+        Width="600"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        FontFamily="Segoe UI"
+        FontSize="12">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- Tytuł notatki -->
+            <RowDefinition Height="*"/>
+            <!-- Treść notatki (multiline TextBox) -->
+            <RowDefinition Height="Auto"/>
+            <!-- Przyciski Zapisz/Anuluj -->
+        </Grid.RowDefinitions>
 
-    <DockPanel Margin="10">
-
-        <!-- Przyciski Zapisz / Anuluj na dole -->
-        <StackPanel Orientation="Horizontal"
-                    DockPanel.Dock="Bottom"
-                    HorizontalAlignment="Right"
-                    Margin="0,10,0,0">
-            <Button Content="Zapisz"
-                    Command="{Binding SaveCommand}"
-                    Width="75" Margin="5,0"/>
-            <Button Content="Anuluj"
-                    Command="{Binding CancelCommand}"
-                    Width="75" Margin="5,0"/>
+        <!-- Pole Tytułu -->
+        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,5">
+            <TextBlock Text="Tytuł:" VerticalAlignment="Center" Width="50"/>
+            <TextBox Text="{Binding Note.Title, UpdateSourceTrigger=PropertyChanged}"
+                     Width="500"/>
         </StackPanel>
 
-        <!-- Cała zawartość bez zagnieżdżonych ScrollViewerów -->
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <!-- Tytuł -->
-                <RowDefinition Height="Auto"/>
-                <!-- CheckListPanel -->
-                <RowDefinition Height="Auto"/>
-                <!-- RegularPanel -->
-                <RowDefinition Height="*"/>
-                <!-- LongFormatPanel -->
-            </Grid.RowDefinitions>
+        <!-- Multiline TextBox dla zawartości notatki -->
+        <TextBox Grid.Row="1"
+                 Text="{Binding Note.Content, UpdateSourceTrigger=PropertyChanged}"
+                 AcceptsReturn="True"
+                 AcceptsTab="True"
+                 VerticalScrollBarVisibility="Auto"
+                 TextWrapping="Wrap"/>
 
-            <!-- 1. Pole Tytułu -->
-            <StackPanel Grid.Row="0" Margin="0,0,0,10">
-                <TextBlock Text="Tytuł:" FontWeight="Bold" Margin="0,0,0,5"/>
-                <TextBox Text="{Binding Note.Title, UpdateSourceTrigger=PropertyChanged}"
-                         Margin="0,0,0,0"/>
-            </StackPanel>
-
-            <!-- 2. CheckListPanel: widoczny tylko gdy Note.Type == CheckList -->
-            <Border Grid.Row="1"
-                    BorderBrush="LightGray"
-                    BorderThickness="1"
-                    CornerRadius="4"
-                    Padding="5"
-                    Margin="0,0,0,10">
-                <!-- Cały Border będzie Collapsed, gdy nie CheckList -->
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding Note.Type}"
-                                         Value="{x:Static models:NoteType.CheckList}">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
-
-                <StackPanel>
-                    <TextBlock Text="Elementy listy (CheckList):" FontWeight="Bold" Margin="0,0,0,5"/>
-
-                    <ItemsControl ItemsSource="{Binding ChecklistItems}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal" Margin="0,2">
-                                    <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}"
-                                              VerticalAlignment="Center"/>
-                                    <TextBox Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             Width="380" Margin="5,0"/>
-                                    <Button Content="X"
-                                            Command="{Binding DataContext.RemoveItemCommand, 
-                                                      RelativeSource={RelativeSource AncestorType=Window}}"
-                                            CommandParameter="{Binding}"
-                                            Width="20" Height="20" Margin="5,0"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-
-                    <Button Content="Dodaj element"
-                            Command="{Binding AddItemCommand}"
-                            Margin="0,10,0,0" Width="110"/>
-                </StackPanel>
-            </Border>
-
-            <!-- 3. RegularPanel: widoczny tylko gdy Note.Type == Regular -->
-            <Border Grid.Row="2"
-                    BorderBrush="LightGray"
-                    BorderThickness="1"
-                    CornerRadius="4"
-                    Padding="5"
-                    Margin="0,0,0,10">
-                <!-- Cały Border będzie Collapsed, gdy nie Regular -->
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding Note.Type}"
-                                         Value="{x:Static models:NoteType.Regular}">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
-
-                <StackPanel>
-                    <TextBlock Text="Treść notatki (Regular):" FontWeight="Bold" Margin="0,0,0,5"/>
-                    <TextBox Text="{Binding Note.Content, UpdateSourceTrigger=LostFocus}"
-                             AcceptsReturn="True"
-                             VerticalScrollBarVisibility="Auto"
-                             Height="200"/>
-                </StackPanel>
-            </Border>
-
-            <!-- 4. LongFormatPanel: widoczny tylko gdy Note.Type == LongFormat -->
-            <Border Grid.Row="3"
-                    BorderBrush="LightGray"
-                    BorderThickness="1"
-                    CornerRadius="4"
-                    Padding="5">
-                <!-- Cały Border będzie Collapsed, gdy nie LongFormat -->
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding Note.Type}"
-                                         Value="{x:Static models:NoteType.LongFormat}">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
-
-                <DockPanel>
-                    <!-- Pasek narzędzi do formatowania (na górze) -->
-                    <ToolBar DockPanel.Dock="Top" Margin="0,0,0,5">
-                        <Button Command="{x:Static ec:EditingCommands.ToggleBold}"
-                                CommandTarget="{Binding ElementName=RichTextEditor}"
-                                Content="B"
-                                FontWeight="Bold"
-                                Width="25" ToolTip="Pogrubienie"/>
-                        <Button Command="{x:Static ec:EditingCommands.ToggleItalic}"
-                                CommandTarget="{Binding ElementName=RichTextEditor}"
-                                Content="I"
-                                FontStyle="Italic"
-                                Width="25" ToolTip="Kursywa"/>
-                        <Button Command="{x:Static ec:EditingCommands.ToggleUnderline}"
-                                CommandTarget="{Binding ElementName=RichTextEditor}"
-                                Width="25" ToolTip="Podkreślenie">
-                            <TextBlock Text="U" TextDecorations="Underline" HorizontalAlignment="Center"/>
-                        </Button>
-                        <Separator/>
-                        <!-- Teraz strzałki wywołują eventy w code-behind -->
-                        <Button Content="→"
-                                Width="25"
-                                Margin="2,0"
-                                ToolTip="Zwiększ wcięcie"
-                                Click="IncreaseIndentation_Click"/>
-                        <Button Content="←"
-                                Width="25"
-                                Margin="2,0"
-                                ToolTip="Zmniejsz wcięcie"
-                                Click="DecreaseIndentation_Click"/>
-                    </ToolBar>
-
-                    <!-- RichTextBox wypełnia pozostałą przestrzeń -->
-                    <RichTextBox x:Name="RichTextEditor"
-                                 VerticalScrollBarVisibility="Auto"/>
-                </DockPanel>
-            </Border>
-
-        </Grid>
-    </DockPanel>
+        <!-- Przycisk Zapisz i Anuluj -->
+        <StackPanel Orientation="Horizontal" Grid.Row="2" HorizontalAlignment="Right" Margin="0,5,0,0">
+            <Button Content="Zapisz"
+                    Width="80"
+                    Margin="0,0,5,0"
+                    Command="{Binding SaveCommand}"/>
+            <Button Content="Anuluj"
+                    Width="80"
+                    Command="{Binding CancelCommand}"/>
+        </StackPanel>
+    </Grid>
 </Window>
