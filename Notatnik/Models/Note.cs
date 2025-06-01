@@ -2,7 +2,10 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.IO;
 using System.Linq;
+using System.Text;
+using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Markup;
 
@@ -19,7 +22,12 @@ namespace Notatnik.Models
     {
         public int Id { get; set; }
         public string Title { get; set; }
+
+        /// <summary>
+        /// Dla LongFormat trzymamy w Content ciąg XAML (FlowDocument) lub pakiet XAML.
+        /// </summary>
         public string Content { get; set; }
+
         public NoteType Type { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime ModifiedAt { get; set; }
@@ -31,7 +39,6 @@ namespace Notatnik.Models
         public List<Tag> Tags { get; set; } = new List<Tag>();
 
         private bool _isMarkedForDeletion = false;
-
         [NotMapped]
         public bool IsMarkedForDeletion
         {
@@ -46,6 +53,12 @@ namespace Notatnik.Models
             }
         }
 
+        /// <summary>
+        /// Zwraca podgląd notatki: 
+        /// - dla CheckList → lista pozycji,
+        /// - dla Regular → pierwsze 100 znaków Content,
+        /// - dla LongFormat → próbuje sparsować Content jako XAML (<FlowDocument>…) lub XamlPackage, a następnie wyciąga pierwsze 100 znaków plain-text.
+        /// </summary>
         [NotMapped]
         public string Snippet
         {
@@ -59,27 +72,39 @@ namespace Notatnik.Models
                         return string.Empty;
 
                     case NoteType.LongFormat:
-                        // Sprawdzamy, czy Content nie jest pusty i czy zaczyna się od poprawnego nagłówka XAML
-                        if (!string.IsNullOrEmpty(Content)
-                            && Content.TrimStart().StartsWith("<FlowDocument", StringComparison.OrdinalIgnoreCase))
+                        if (string.IsNullOrEmpty(Content))
+                            return string.Empty;
+
+                        // 1) Spróbuj jako czysty XAML (FlowDocument …)
+                        try
                         {
-                            try
+                            var trimmed = Content.TrimStart();
+                            if (trimmed.StartsWith("<FlowDocument", StringComparison.OrdinalIgnoreCase))
                             {
-                                var flowDoc = (FlowDocument)XamlReader.Parse(Content);
-                                var textRange = new TextRange(flowDoc.ContentStart, flowDoc.ContentEnd);
-                                var plain = textRange.Text.Trim()
-                                                      .Replace("\r", "")
-                                                      .Replace("\n", " ");
-                                if (plain.Length <= 100)
-                                    return plain;
-                                return plain.Substring(0, 100) + ".";
-                            }
-                            catch
-                            {
-                                // Gdy parsowanie XAML się nie powiedzie, zwracamy pusty ciąg
-                                return string.Empty;
+                                var doc = (FlowDocument)XamlReader.Parse(Content);
+                                return ExtractPlainText(doc);
                             }
                         }
+                        catch
+                        {
+                            // nie powiodło się parsowanie jako czysty XAML
+                        }
+
+                        // 2) Spróbuj jako pakiet XAML (XamlPackage)
+                        try
+                        {
+                            byte[] data = Encoding.UTF8.GetBytes(Content);
+                            using var ms = new MemoryStream(data);
+                            var tempDoc = new FlowDocument();
+                            var rng = new TextRange(tempDoc.ContentStart, tempDoc.ContentEnd);
+                            rng.Load(ms, DataFormats.XamlPackage);
+                            return ExtractPlainText(tempDoc);
+                        }
+                        catch
+                        {
+                            // nawet jako pakiet XAML się nie udało
+                        }
+
                         return string.Empty;
 
                     case NoteType.Regular:
@@ -88,15 +113,30 @@ namespace Notatnik.Models
                             var plain = Content.Trim()
                                                .Replace("\r", "")
                                                .Replace("\n", " ");
-                            if (plain.Length <= 100)
-                                return plain;
-                            return plain.Substring(0, 100) + ".";
+                            return plain.Length <= 100 ? plain : plain.Substring(0, 100) + ".";
                         }
                         return string.Empty;
 
                     default:
                         return string.Empty;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Pobiera plain text z FlowDocument, obcina do 100 znaków.
+        /// </summary>
+        private string ExtractPlainText(FlowDocument doc)
+        {
+            try
+            {
+                var tr = new TextRange(doc.ContentStart, doc.ContentEnd);
+                var plain = tr.Text?.Trim().Replace("\r", "").Replace("\n", " ") ?? string.Empty;
+                return plain.Length <= 100 ? plain : plain.Substring(0, 100) + ".";
+            }
+            catch
+            {
+                return string.Empty;
             }
         }
 

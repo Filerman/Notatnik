@@ -13,7 +13,7 @@
         <vm:MainViewModel/>
     </Window.DataContext>
 
-    <!-- Styl nagłówków kolumn (jasnoszare tło, pogrubiona czcionka) -->
+    <!-- Styl nagłówków kolumn -->
     <Window.Resources>
         <Style TargetType="GridViewColumnHeader">
             <Setter Property="Background" Value="LightGray"/>
@@ -25,15 +25,12 @@
 
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
-            <!-- 1) Lewa kolumna – Foldery: zawsze 250 px szerokości -->
             <ColumnDefinition Width="250"/>
-            <!-- 2) Separator (GridSplitter) – 5 px -->
             <ColumnDefinition Width="5"/>
-            <!-- 3) Prawa kolumna – Notatki: zajmuje pozostałe miejsce (*) -->
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- ================= Sekcja FOLDERÓW ================= -->
+        <!-- ========== SEKCJA FOLDERÓW ========== -->
         <GroupBox Header="Foldery"
                   FontWeight="Bold"
                   Grid.Column="0"
@@ -42,13 +39,11 @@
                   BorderThickness="1">
             <Grid Margin="5">
                 <Grid.RowDefinitions>
-                    <!-- Lista folderów rośnie do dostępnej wysokości -->
-                    <RowDefinition Height="*" />
-                    <!-- Przycisk „Dodaj folder” i „Usuń zaznaczone” -->
+                    <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- LISTVIEW FOLDERÓW -->
+                <!-- Lista Folderów -->
                 <ListView x:Name="ListViewFolders"
                           ItemsSource="{Binding Folders}"
                           SelectedItem="{Binding SelectedFolder}"
@@ -58,7 +53,6 @@
                           ScrollViewer.VerticalScrollBarVisibility="Auto">
                     <ListView.View>
                         <GridView>
-                            <!-- 1) Kolumna z checkboxami dla usuwania -->
                             <GridViewColumn Width="30">
                                 <GridViewColumn.Header>
                                     <CheckBox x:Name="HeaderCheckboxFolders"
@@ -72,8 +66,6 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-
-                            <!-- 2) Kolumna „Nazwa folderu” -->
                             <GridViewColumn Header="Nazwa folderu"
                                             Width="180"
                                             DisplayMemberBinding="{Binding Name}" />
@@ -81,7 +73,6 @@
                     </ListView.View>
                 </ListView>
 
-                <!-- Przyciski pod ListView folderów -->
                 <StackPanel Orientation="Horizontal"
                             Grid.Row="1"
                             HorizontalAlignment="Right"
@@ -97,7 +88,7 @@
             </Grid>
         </GroupBox>
 
-        <!-- ================= Separator: GridSplitter ================= -->
+        <!-- ========== GRID SPLITTER ========== -->
         <GridSplitter Grid.Column="1"
                       Width="5"
                       HorizontalAlignment="Center"
@@ -105,7 +96,7 @@
                       ShowsPreview="True"
                       Background="LightGray"/>
 
-        <!-- ================= Sekcja NOTATEK ================= -->
+        <!-- ========== SEKCJA NOTATEK ========== -->
         <GroupBox Header="Notatki"
                   FontWeight="Bold"
                   Grid.Column="2"
@@ -114,13 +105,11 @@
                   BorderThickness="1">
             <Grid Margin="5">
                 <Grid.RowDefinitions>
-                    <!-- Lista notatek rośnie do dostępnej wysokości -->
-                    <RowDefinition Height="*" />
-                    <!-- Przycisk „Dodaj notatkę” i „Usuń zaznaczone” -->
+                    <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- LISTVIEW NOTATEK: dwuklik uruchamia edycję notatki -->
+                <!-- Lista Notatek -->
                 <ListView x:Name="ListViewNotes"
                           ItemsSource="{Binding Notes}"
                           SelectedItem="{Binding SingleSelectedNote}"
@@ -131,7 +120,8 @@
                           MouseDoubleClick="ListViewNotes_MouseDoubleClick">
                     <ListView.View>
                         <GridView>
-                            <!-- 1) Kolumna z checkboxami dla usuwania notatek -->
+
+                            <!-- Kolumna 1: Checkbox do oznaczania -->
                             <GridViewColumn Width="30">
                                 <GridViewColumn.Header>
                                     <CheckBox x:Name="HeaderCheckboxNotes"
@@ -146,17 +136,17 @@
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
 
-                            <!-- 2) Kolumna „Tytuł” -->
+                            <!-- Kolumna 2: Tytuł -->
                             <GridViewColumn Header="Tytuł"
                                             Width="220"
                                             DisplayMemberBinding="{Binding Title}" />
 
-                            <!-- 3) Kolumna „Podgląd” (tekst zawija się) -->
+                            <!-- Kolumna 3: Podgląd tekstu (Snippet) -->
                             <GridViewColumn Header="Podgląd"
                                             Width="300">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding Snippet}"
+                                        <TextBlock Text="{Binding Snippet, Mode=OneWay}"
                                                    TextWrapping="Wrap"
                                                    VerticalAlignment="Top"
                                                    Margin="2,0,2,0"/>
@@ -164,7 +154,7 @@
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
 
-                            <!-- 4) Kolumna „Utworzono” -->
+                            <!-- Kolumna 4: Utworzono -->
                             <GridViewColumn Header="Utworzono"
                                             Width="130">
                                 <GridViewColumn.CellTemplate>
@@ -174,7 +164,7 @@
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
 
-                            <!-- 5) Kolumna „Zmodyfikowano” -->
+                            <!-- Kolumna 5: Zmodyfikowano -->
                             <GridViewColumn Header="Zmodyfikowano"
                                             Width="150">
                                 <GridViewColumn.CellTemplate>
@@ -183,11 +173,11 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
+
                         </GridView>
                     </ListView.View>
                 </ListView>
 
-                <!-- Przyciski pod ListView notatek (usunęliśmy „Edytuj notatkę”) -->
                 <StackPanel Orientation="Horizontal"
                             Grid.Row="1"
                             HorizontalAlignment="Right"
@@ -196,8 +186,6 @@
                             Width="100"
                             Margin="0,0,5,0"
                             Command="{Binding AddNoteCommand}"/>
-                    <!-- <Button Content="Edytuj notatkę" Width="100" Margin="0,0,5,0" 
-                            Command="{Binding EditNoteCommand}"/> -->
                     <Button Content="Usuń zaznaczone"
                             Width="120"
                             Command="{Binding DeleteMarkedNotesCommand}"/>

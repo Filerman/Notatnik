@@ -19,62 +19,92 @@ namespace Notatnik.Views
             _vm = vm;
             DataContext = vm;
 
-            // Jeśli ViewModel wywoła RequestClose, zamykamy okno
+            // Subskrybujemy zdarzenie zamknięcia z VM
             _vm.RequestClose += OnVmRequestClose;
             Loaded += OnLoaded;
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            // Jeżeli edytujemy istniejącą notatkę typu LongFormat, załaduj jej zawartość do RichTextBoxa
+            // Jeżeli edytujemy notatkę typu LongFormat i Content nie jest pusty,
+            // spróbuj załadować go jako czysty XAML. Jeśli nie wyjdzie, spróbuj jako XamlPackage.
             if (_vm.Note.Type == NoteType.LongFormat &&
                 !string.IsNullOrEmpty(_vm.Note.Content))
             {
-                var range = new TextRange(RichTextEditor.Document.ContentStart,
-                                          RichTextEditor.Document.ContentEnd);
+                var contentStr = _vm.Note.Content;
+                var trimmed = contentStr.TrimStart();
+
+                // 1) Spróbuj wczytać jako czysty XAML
+                if (trimmed.StartsWith("<FlowDocument", StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        var range = new TextRange(RichTextEditor.Document.ContentStart,
+                                                  RichTextEditor.Document.ContentEnd);
+                        using var ms = new MemoryStream(Encoding.UTF8.GetBytes(contentStr));
+                        range.Load(ms, DataFormats.Xaml);
+                        return;
+                    }
+                    catch
+                    {
+                        RichTextEditor.Document = new FlowDocument();
+                        return;
+                    }
+                }
+
+                // 2) Spróbuj wczytać jako pakiet XAML (XamlPackage)
                 try
                 {
-                    // Zakładamy, że Note.Content zawiera XAML zapamiętany jako UTF8 string
-                    using var ms = new MemoryStream(Encoding.UTF8.GetBytes(_vm.Note.Content));
-                    range.Load(ms, DataFormats.Xaml);
+                    var range = new TextRange(RichTextEditor.Document.ContentStart,
+                                              RichTextEditor.Document.ContentEnd);
+                    using var ms2 = new MemoryStream(Encoding.UTF8.GetBytes(contentStr));
+                    range.Load(ms2, DataFormats.XamlPackage);
                 }
                 catch
                 {
-                    // Jeśli nie uda się sparsować XAML-a, zostawiamy pusty dokument
+                    RichTextEditor.Document = new FlowDocument();
                 }
             }
         }
 
         private void OnVmRequestClose(object sender, bool dialogResult)
         {
-            if (dialogResult)
+            if (dialogResult && _vm.Note.Type == NoteType.LongFormat)
             {
-                // Przy zapisie: jeśli LongFormat, odczytaj zawartość RichTextBoxa do Note.Content
-                if (_vm.Note.Type == NoteType.LongFormat)
+                // Pobierz z RichTextBoxa i spróbuj zapisać jako czysty XAML
+                var range = new TextRange(RichTextEditor.Document.ContentStart,
+                                          RichTextEditor.Document.ContentEnd);
+                using var ms = new MemoryStream();
+                try
                 {
-                    var range = new TextRange(RichTextEditor.Document.ContentStart,
-                                              RichTextEditor.Document.ContentEnd);
-                    using var ms = new MemoryStream();
                     range.Save(ms, DataFormats.Xaml);
                     _vm.Note.Content = Encoding.UTF8.GetString(ms.ToArray());
                 }
-                // Dla Regular i CheckList nie trzeba nic więcej robić—
-                // wszystko zostało zsynchronizowane w ViewModelu
+                catch
+                {
+                    // Jeżeli z jakiegoś powodu zapis jako czysty XAML się nie powiedzie,
+                    // spróbuj zapisać jako pakiet XAML
+                    try
+                    {
+                        using var ms2 = new MemoryStream();
+                        range.Save(ms2, DataFormats.XamlPackage);
+                        _vm.Note.Content = Encoding.UTF8.GetString(ms2.ToArray());
+                    }
+                    catch
+                    {
+                        // Jeśli nawet to się nie uda, zostaw Content bez zmian
+                    }
+                }
             }
 
             DialogResult = dialogResult;
             Close();
         }
 
-        /// <summary>
-        /// Zwiększa wcięcie wszystkich akapitów w zaznaczeniu o 20px.
-        /// Jeżeli nie ma zaznaczenia, zmienia wcięcie akapitu, w którym jest kursor.
-        /// </summary>
         private void IncreaseIndentation_Click(object sender, RoutedEventArgs e)
         {
             RichTextEditor.Focus();
             var selection = RichTextEditor.Selection;
-
             if (selection.IsEmpty)
             {
                 if (RichTextEditor.CaretPosition.Paragraph is Paragraph singlePara)
@@ -86,12 +116,10 @@ namespace Notatnik.Views
 
             var selStart = selection.Start;
             var selEnd = selection.End;
-
             foreach (Block block in RichTextEditor.Document.Blocks)
             {
                 if (block is Paragraph para)
                 {
-                    // Sprawdź, czy para znajduje się w zaznaczeniu:
                     if (para.ContentEnd.CompareTo(selStart) > 0 &&
                         para.ContentStart.CompareTo(selEnd) < 0)
                     {
@@ -101,14 +129,10 @@ namespace Notatnik.Views
             }
         }
 
-        /// <summary>
-        /// Zmniejsza wcięcie wszystkich akapitów w zaznaczeniu o 20px (do minimum 0).
-        /// </summary>
         private void DecreaseIndentation_Click(object sender, RoutedEventArgs e)
         {
             RichTextEditor.Focus();
             var selection = RichTextEditor.Selection;
-
             if (selection.IsEmpty)
             {
                 if (RichTextEditor.CaretPosition.Paragraph is Paragraph singlePara)
@@ -120,7 +144,6 @@ namespace Notatnik.Views
 
             var selStart = selection.Start;
             var selEnd = selection.End;
-
             foreach (Block block in RichTextEditor.Document.Blocks)
             {
                 if (block is Paragraph para)

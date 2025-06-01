@@ -14,41 +14,32 @@ namespace Notatnik.ViewModels
     public class NoteDetailsViewModel : INotifyPropertyChanged
     {
         private readonly AppDbContext _db;
-
         public Note Note { get; }
 
-        // Kolekcja bindowana w XAML (ItemsControl w CheckListPanel)
         public ObservableCollection<ChecklistItem> ChecklistItems { get; }
 
-        // Komendy bindowane w XAML:
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
         public ICommand AddItemCommand { get; }
         public ICommand RemoveItemCommand { get; }
 
-        // Flagi widoczności paneli w XAML (DataTrigger w XAML)
         public bool IsChecklist => Note.Type == NoteType.CheckList;
         public bool IsRegular => Note.Type == NoteType.Regular;
         public bool IsLongFormat => Note.Type == NoteType.LongFormat;
 
-        // Zdarzenie zamykające okno (View nasłuchuje, aby zamknąć się z wynikiem ok/false)
         public event EventHandler<bool> RequestClose;
 
         public NoteDetailsViewModel(Note note)
         {
-            // Utwórz nowy kontekst (AppDbContextFactory tak, jak masz w projekcie)
             _db = new AppDbContextFactory().CreateDbContext(null);
-
             Note = note;
             ChecklistItems = new ObservableCollection<ChecklistItem>();
 
-            // Jeśli to edycja istniejącej notatki typu CheckList, załaduj z bazy zapisane elementy
             if (Note.Id != 0 && Note.Type == NoteType.CheckList)
             {
                 _db.Entry(Note)
                    .Collection(n => n.ChecklistItems)
                    .Load();
-
                 foreach (var ci in Note.ChecklistItems)
                 {
                     ChecklistItems.Add(new ChecklistItem
@@ -61,9 +52,6 @@ namespace Notatnik.ViewModels
                 }
             }
 
-            // Dla nowych notatek ChecklistItems zostaje pusta — użytkownik może dodawać elementy
-
-            // Inicjalizacja komend:
             SaveCommand = new RelayCommand(_ => OnSave());
             CancelCommand = new RelayCommand(_ => OnCancel());
             AddItemCommand = new RelayCommand(_ => OnAddItem());
@@ -72,7 +60,6 @@ namespace Notatnik.ViewModels
 
         private void OnAddItem()
         {
-            // Dodaj pustą pozycję; UI automatycznie wyświetli linię z CheckBox + TextBox
             ChecklistItems.Add(new ChecklistItem
             {
                 Text = string.Empty,
@@ -93,7 +80,6 @@ namespace Notatnik.ViewModels
 
             if (Note.Type == NoteType.CheckList)
             {
-                // 1) Usuń z bazy wszystkie istniejące pozycje powiązane z tą notatką
                 if (Note.Id != 0)
                 {
                     var existing = _db.ChecklistItems
@@ -106,24 +92,22 @@ namespace Notatnik.ViewModels
                     }
                 }
 
-                // 2) Wyczyść oryginalną listę w Note i przepisz z ObservableCollection
                 Note.ChecklistItems.Clear();
                 foreach (var ci in ChecklistItems)
                 {
                     if (string.IsNullOrWhiteSpace(ci.Text))
-                        continue; // pomiń puste
+                        continue;
+
                     var newCi = new ChecklistItem
                     {
                         Text = ci.Text.Trim(),
                         IsChecked = ci.IsChecked,
                         Note = Note
-                        // NoteId ustawi EF po zapisie Note
                     };
                     Note.ChecklistItems.Add(newCi);
                 }
             }
 
-            // Teraz dodajemy lub aktualizujemy notatkę w kontekście EF
             if (Note.Id == 0)
             {
                 Note.CreatedAt = DateTime.Now;
@@ -131,7 +115,6 @@ namespace Notatnik.ViewModels
             }
             else
             {
-                // Odpinamy nawigację do Folder, żeby EF nie miał konfliktów przy update
                 Note.Folder = null;
                 _db.Notes.Update(Note);
             }
@@ -146,11 +129,9 @@ namespace Notatnik.ViewModels
         }
 
         #region INotifyPropertyChanged
-
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string name) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-
         #endregion
     }
 }
