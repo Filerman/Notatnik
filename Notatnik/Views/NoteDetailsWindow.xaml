@@ -25,34 +25,30 @@
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <!-- Tytuł -->
+                <!-- 0: Pole Tytułu -->
                 <RowDefinition Height="Auto"/>
-                <!-- Tagi -->
-                <RowDefinition Height="Auto"/>
-                <!-- CheckListPanel -->
+                <!-- 1: Pole Tagów -->
                 <RowDefinition Height="*"/>
-                <!-- RegularPanel -->
+                <!-- 2: CheckListPanel -->
                 <RowDefinition Height="*"/>
-                <!-- LongFormatPanel -->
+                <!-- 3: RegularPanel -->
+                <RowDefinition Height="*"/>
+                <!-- 4: LongFormatPanel -->
             </Grid.RowDefinitions>
 
-            <!-- 1. Pole Tytułu -->
+            <!-- 0. Pole Tytułu -->
             <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
                 <TextBlock Text="Tytuł:"
-               FontWeight="Bold"
-               VerticalAlignment="Center"
-               Margin="0,0,10,0"/>
-
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"
+                           Margin="0,0,10,0"/>
                 <TextBox Text="{Binding Note.Title, UpdateSourceTrigger=PropertyChanged}"
-         Height="22" Width="600"/>
-
+                         Height="22" Width="600"/>
             </StackPanel>
-
 
             <!-- 2. Pole do zarządzania tagami -->
             <StackPanel Grid.Row="1" Margin="0,0,0,10">
-
-                <!-- W jednej linii: napis, ComboBox i przycisk -->
+                <!-- W jednej linii: napis, ComboBox (ze specjalnym stylem), przycisk Dodaj -->
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
                     <TextBlock Text="Tagi:   " FontWeight="Bold" Margin="0,0,5,0" VerticalAlignment="Center"/>
 
@@ -61,14 +57,56 @@
                   ItemsSource="{Binding AvailableTags}"
                   Text="{Binding NewTagText, UpdateSourceTrigger=PropertyChanged}"
                   ToolTip="Wybierz lub wpisz nowy tag"
-                  Margin="0,0,5,0"/>
+                  Margin="0,0,5,0">
+                        <!-- 1) Ustawiamy, aby każdy ComboBoxItem rozciągał się na całą szerokość -->
+                        <ComboBox.ItemContainerStyle>
+                            <Style TargetType="ComboBoxItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            </Style>
+                        </ComboBox.ItemContainerStyle>
+
+                        <!-- 2) Definiujemy Grid: pierwsza kolumna "*" (tekst), druga "Auto" (przycisk) -->
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <!-- kolumna 0: wypełnia dostępną przestrzeń -->
+                                        <ColumnDefinition Width="*" />
+                                        <!-- kolumna 1: tylko na szerokość przycisku -->
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Tekst taga po lewej, zajmuje całą przestrzeń kolumny 0 -->
+                                    <TextBlock Text="{Binding}"
+                                   Grid.Column="0"
+                                   VerticalAlignment="Center"
+                                   Margin="5,0"/>
+
+                                    <!-- Przycisk '×' wyrównany do prawej (kolumna 1) -->
+                                    <Button Grid.Column="1"
+                                Content="×"
+                                Command="{Binding DataContext.RemoveAvailableTagCommand,
+                                                  RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="{Binding}"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Foreground="Red"
+                                FontWeight="Bold"
+                                Padding="0"
+                                Width="20"
+                                Height="20"
+                                Margin="5,0,5,0"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
 
                     <Button Content="Dodaj"
                 Command="{Binding AddTagCommand}"
                 Width="60"/>
                 </StackPanel>
 
-                <!-- Lista obecnie przypisanych tagów z opcją usuwania -->
+                <!-- Lista obecnie przypisanych tagów (bez zmian od Ciebie) -->
                 <ItemsControl ItemsSource="{Binding Tags}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -81,10 +119,16 @@
                                 <Border Background="#EEE" CornerRadius="3" Padding="3,1">
                                     <TextBlock Text="{Binding}" Foreground="Gray" FontStyle="Italic"/>
                                 </Border>
-                                <Button Content="X"
+                                <Button Content="×"
                             Command="{Binding DataContext.RemoveTagCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                             CommandParameter="{Binding}"
-                            Width="20" Height="20"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Foreground="Red"
+                            FontWeight="Bold"
+                            Padding="0"
+                            Width="20"
+                            Height="20"
                             Margin="5,0,0,0"/>
                             </StackPanel>
                         </DataTemplate>
@@ -93,14 +137,14 @@
 
             </StackPanel>
 
-            <!-- 3. CheckListPanel: widoczny tylko gdy Note.Type == CheckList -->
+
+            <!-- 2. CheckListPanel: widoczny tylko gdy Note.Type == CheckList -->
             <Border Grid.Row="2"
                     BorderBrush="LightGray"
                     BorderThickness="1"
                     CornerRadius="4"
                     Padding="5"
                     Margin="0,0,0,10">
-                <!-- Cały Border będzie Collapsed, gdy nie CheckList -->
                 <Border.Style>
                     <Style TargetType="Border">
                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -114,7 +158,9 @@
                 </Border.Style>
 
                 <StackPanel>
-                    <TextBlock Text="Elementy listy (CheckList):" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <TextBlock Text="Elementy listy (CheckList):"
+                               FontWeight="Bold"
+                               Margin="0,0,0,5"/>
 
                     <ItemsControl ItemsSource="{Binding ChecklistItems}">
                         <ItemsControl.ItemTemplate>
@@ -124,11 +170,17 @@
                                               VerticalAlignment="Center"/>
                                     <TextBox Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              Width="380" Margin="5,0"/>
-                                    <Button Content="X"
-                                            Command="{Binding DataContext.RemoveItemCommand, 
-                                                      RelativeSource={RelativeSource AncestorType=Window}}"
+                                    <Button Content="×"
+                                            Command="{Binding DataContext.RemoveItemCommand,
+                                                              RelativeSource={RelativeSource AncestorType=Window}}"
                                             CommandParameter="{Binding}"
-                                            Width="20" Height="20" Margin="5,0"/>
+                                            Width="20" Height="20"
+                                            Margin="5,0"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Foreground="Red"
+                                            FontWeight="Bold"
+                                            Padding="0"/>
                                 </StackPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -136,18 +188,18 @@
 
                     <Button Content="Dodaj element"
                             Command="{Binding AddItemCommand}"
-                            Margin="0,10,0,0" Width="110"/>
+                            Margin="0,10,0,0"
+                            Width="110"/>
                 </StackPanel>
             </Border>
 
-            <!-- 4. RegularPanel: widoczny tylko gdy Note.Type == Regular -->
+            <!-- 3. RegularPanel: widoczny tylko gdy Note.Type == Regular -->
             <Border Grid.Row="3"
                     BorderBrush="LightGray"
                     BorderThickness="1"
                     CornerRadius="4"
                     Padding="5"
                     Margin="0,0,0,10">
-                <!-- Cały Border będzie Collapsed, gdy nie Regular -->
                 <Border.Style>
                     <Style TargetType="Border">
                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -161,7 +213,9 @@
                 </Border.Style>
 
                 <StackPanel>
-                    <TextBlock Text="Treść notatki (Regular):" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <TextBlock Text="Treść notatki (Regular):"
+                               FontWeight="Bold"
+                               Margin="0,0,0,5"/>
                     <TextBox Text="{Binding Note.Content, UpdateSourceTrigger=LostFocus}"
                              AcceptsReturn="True"
                              VerticalScrollBarVisibility="Auto"
@@ -169,13 +223,12 @@
                 </StackPanel>
             </Border>
 
-            <!-- 5. LongFormatPanel: widoczny tylko gdy Note.Type == LongFormat -->
+            <!-- 4. LongFormatPanel: widoczny tylko gdy Note.Type == LongFormat -->
             <Border Grid.Row="4"
                     BorderBrush="LightGray"
                     BorderThickness="1"
                     CornerRadius="4"
                     Padding="5">
-                <!-- Cały Border będzie Collapsed, gdy nie LongFormat -->
                 <Border.Style>
                     <Style TargetType="Border">
                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -195,19 +248,24 @@
                                 CommandTarget="{Binding ElementName=RichTextEditor}"
                                 Content="B"
                                 FontWeight="Bold"
-                                Width="25" ToolTip="Pogrubienie"/>
+                                Width="25"
+                                ToolTip="Pogrubienie"/>
                         <Button Command="{x:Static ec:EditingCommands.ToggleItalic}"
                                 CommandTarget="{Binding ElementName=RichTextEditor}"
                                 Content="I"
                                 FontStyle="Italic"
-                                Width="25" ToolTip="Kursywa"/>
+                                Width="25"
+                                ToolTip="Kursywa"/>
                         <Button Command="{x:Static ec:EditingCommands.ToggleUnderline}"
                                 CommandTarget="{Binding ElementName=RichTextEditor}"
-                                Width="25" ToolTip="Podkreślenie">
-                            <TextBlock Text="U" TextDecorations="Underline" HorizontalAlignment="Center"/>
+                                Width="25"
+                                ToolTip="Podkreślenie">
+                            <TextBlock Text="U"
+                                       TextDecorations="Underline"
+                                       HorizontalAlignment="Center"/>
                         </Button>
                         <Separator/>
-                        <!-- Teraz strzałki wywołują eventy w code-behind -->
+                        <!-- Strzałki wywołują eventy w code-behind -->
                         <Button Content="→"
                                 Width="25"
                                 Margin="2,0"

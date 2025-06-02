@@ -2,7 +2,9 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Windows;
 using System.Windows.Input;
+using Microsoft.EntityFrameworkCore;
 using Notatnik.Commands;
 using Notatnik.Data;
 using Notatnik.Models;
@@ -14,6 +16,7 @@ namespace Notatnik.ViewModels
         private readonly AppDbContext _db;
         public Note Note { get; }
 
+        // Kolekcje bindowane we widoku:
         public ObservableCollection<ChecklistItem> ChecklistItems { get; }
         public ObservableCollection<string> Tags { get; } = new ObservableCollection<string>();
         public ObservableCollection<string> AvailableTags { get; } = new ObservableCollection<string>();
@@ -33,25 +36,39 @@ namespace Notatnik.ViewModels
             }
         }
 
+        // Komendy dla checklisty:
         public ICommand AddItemCommand { get; }
         public ICommand RemoveItemCommand { get; }
 
+        // Komendy dla tagów:
         private RelayCommand _addTagCommand;
         public ICommand AddTagCommand => _addTagCommand;
 
+        private RelayCommand _removeAvailableTagCommand;
+        public ICommand RemoveAvailableTagCommand => _removeAvailableTagCommand;
+
         public ICommand RemoveTagCommand { get; }
+
+        // Komendy Zapisz / Anuluj
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
 
+        public event PropertyChangedEventHandler PropertyChanged;
+        public event EventHandler<bool> RequestClose;
+
         public NoteDetailsViewModel(Note note, AppDbContext db)
         {
-            Note = note;
-            _db = db;
+            Note = note ?? throw new ArgumentNullException(nameof(note));
+            _db = db ?? throw new ArgumentNullException(nameof(db));
 
-            ChecklistItems = new ObservableCollection<ChecklistItem>(note.Type == NoteType.CheckList
-                ? note.ChecklistItems
-                : new ChecklistItem[0]);
+            // 1) Wczytanie checklisty (jeśli Note.Type == CheckList), w przeciwnym razie pusta lista
+            ChecklistItems = new ObservableCollection<ChecklistItem>(
+                note.Type == NoteType.CheckList
+                    ? note.ChecklistItems
+                    : Array.Empty<ChecklistItem>()
+            );
 
+            // 2) Wczytaj z Note istniejące tagi (same nazwy) do kolekcji Tags
             if (note.Tags != null)
             {
                 foreach (var tag in note.Tags)
@@ -60,10 +77,24 @@ namespace Notatnik.ViewModels
                 }
             }
 
+            // 3) Załaduj wszystkie dostępne tagi z bazy do AvailableTags (ComboBox)
+            var allTags = _db.Tags
+                             .AsNoTracking()
+                             .Select(t => t.Name)
+                             .OrderBy(name => name)
+                             .ToList();
+            foreach (var tagName in allTags)
+            {
+                AvailableTags.Add(tagName);
+            }
+
+            // 4) Inicjalizacja komend
             AddItemCommand = new RelayCommand(_ => AddItem());
             RemoveItemCommand = new RelayCommand(o => RemoveItem(o as ChecklistItem), o => o is ChecklistItem);
 
             _addTagCommand = new RelayCommand(_ => AddTag(), _ => CanAddTag());
+            _removeAvailableTagCommand = new RelayCommand(o => RemoveAvailableTag(o as string), o => o is string);
+
             RemoveTagCommand = new RelayCommand(o => RemoveTag(o as string), o => o is string);
 
             SaveCommand = new RelayCommand(_ => OnRequestClose(true));
@@ -94,65 +125,144 @@ namespace Notatnik.ViewModels
         private bool CanAddTag()
         {
             var tag = NewTagText?.Trim() ?? "";
-            return !string.IsNullOrWhiteSpace(tag) && !tag.Contains(" ") && !Tags.Contains(tag);
+            // warunki: niepusty, nie zawiera spacji, i nie ma w kolekcji Tags (ignorując wielkość liter)
+            return !string.IsNullOrWhiteSpace(tag)
+                   && !tag.Contains(" ")
+                   && !Tags.Contains(tag, StringComparer.InvariantCultureIgnoreCase);
         }
 
         private void AddTag()
         {
             var tag = NewTagText.Trim();
 
-            if (!Tags.Contains(tag))
+            if (!Tags.Contains(tag, StringComparer.InvariantCultureIgnoreCase))
             {
                 Tags.Add(tag);
-                NewTagText = string.Empty;
+
+                // Jeśli w AvailableTags jeszcze nie ma tej nazwy, dodajemy ją tam również:
+                if (!AvailableTags.Contains(tag, StringComparer.InvariantCultureIgnoreCase))
+                {
+                    AvailableTags.Add(tag);
+                    // Nowy tag zostanie w bazie utworzony dopiero przy SaveTagsToNote()
+                }
             }
+
+            NewTagText = string.Empty;
         }
 
         private void RemoveTag(string tag)
         {
-            if (tag != null)
+            if (string.IsNullOrEmpty(tag)) return;
+            if (Tags.Contains(tag))
             {
                 Tags.Remove(tag);
             }
         }
 
-        public void SaveTagsToNote()
+        /// <summary>
+        /// Usuwa wybrany tag z całej aplikacji:
+        /// 1) Jeśli istnieje w bazie – usuwa rekord Tag (a EF Core usunie powiązania w tabeli łączącej).
+        /// 2) Usuwa go z AvailableTags.
+        /// 3) Jeśli notatka miała go już przypisanego – usuwa z Note.Tags i z kolekcji Tags.
+        /// </summary>
+        private void RemoveAvailableTag(string tagName)
         {
-            // Wczytaj wszystkie istniejące tagi z bazy
+            if (string.IsNullOrEmpty(tagName)) return;
+
+            // Konwertujemy raz na małe litery, aby można było porównać z kolumną w SQL
+            var lowerName = tagName.ToLower();
+
+            var tagEntity = _db.Tags
+                               .Include(t => t.Notes)
+                               .FirstOrDefault(t => t.Name.ToLower() == lowerName);
+
+            if (tagEntity != null)
+            {
+                // Usuń powiązania NOTATKA ↔ TAG (jeśli istnieją)
+                foreach (var note in tagEntity.Notes.ToList())
+                {
+                    note.Tags.Remove(tagEntity);
+                }
+
+                // Usuń sam tag z bazy
+                _db.Tags.Remove(tagEntity);
+                _db.SaveChanges();
+            }
+
+            // Usuń z AvailableTags
+            if (AvailableTags.Contains(tagName))
+            {
+                AvailableTags.Remove(tagName);
+            }
+
+            // Usuń z przypisanych tagów tej notatki, jeśli tu był
+            if (Tags.Contains(tagName))
+            {
+                Tags.Remove(tagName);
+            }
+
+            OnPropertyChanged(nameof(AvailableTags));
+            OnPropertyChanged(nameof(Tags));
+        }
+
+
+        /// <summary>
+        /// Przy zapisie notatki: tworzymy/aktualizujemy relacje wiele-do-wielu Note-&gt;Tag.
+        /// </summary>
+        private void SaveTagsToNote()
+        {
+            // 1) Załaduj wszystkie encje Tag z bazy (żeby nie robić kolejnych odpytań),
+            //    tak by po nazwie móc znaleźć istniejący Tag.
             var existingTags = _db.Tags.ToList();
 
+            // 2) Upewnij się, że Note.Tags jest załadowane
+            _db.Entry(Note).Collection(n => n.Tags).Load();
             Note.Tags.Clear();
 
+            // 3) Dla każdej nazwy w Tags:
             foreach (var tagName in Tags)
             {
-                // Szukaj po nazwie – unikniesz duplikatów
-                var existingTag = existingTags.FirstOrDefault(t => t.Name == tagName);
-                if (existingTag != null)
+                var exist = existingTags
+                            .FirstOrDefault(t => t.Name.Equals(tagName, StringComparison.InvariantCultureIgnoreCase));
+
+                if (exist != null)
                 {
-                    Note.Tags.Add(existingTag);
+                    // Podpinamy istniejący
+                    Note.Tags.Add(exist);
                 }
                 else
                 {
+                    // Tworzymy nowy
                     var newTag = new Tag { Name = tagName };
-                    _db.Tags.Add(newTag); // dodaj do kontekstu
+                    _db.Tags.Add(newTag);
                     Note.Tags.Add(newTag);
+                    existingTags.Add(newTag);
                 }
             }
+
+            // 4) Zapisz w bazie (zarówno nowe entitiy Tag, jak i relacje wiele-do-wielu)
+            _db.SaveChanges();
         }
 
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged(string name) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-
-        public event EventHandler<bool> RequestClose;
-        private void OnRequestClose(bool result)
+        private void OnRequestClose(bool dialogResult)
         {
-            if (result)
+            if (dialogResult)
             {
-                SaveTagsToNote();
+                try
+                {
+                    SaveTagsToNote();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Błąd przy zapisie tagów: {ex.Message}", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
             }
-            RequestClose?.Invoke(this, result);
+
+            RequestClose?.Invoke(this, dialogResult);
         }
+
+        protected void OnPropertyChanged(string propertyName) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
