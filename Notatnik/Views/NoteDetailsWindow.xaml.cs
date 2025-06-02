@@ -49,12 +49,23 @@ namespace Notatnik.Views
                 // Przy zapisie: jeśli LongFormat → odczytaj XAML z RichTextBoxa
                 if (_vm.Note.Type == NoteType.LongFormat)
                 {
-                    var range = new TextRange(RichTextEditor.Document.ContentStart, RichTextEditor.Document.ContentEnd);
+                    /*var range = new TextRange(RichTextEditor.Document.ContentStart, RichTextEditor.Document.ContentEnd);
                     using var ms = new MemoryStream();
                     range.Save(ms, DataFormats.Xaml);
-                    _vm.Note.Content = Encoding.UTF8.GetString(ms.ToArray());
+                    _vm.Note.Content = Encoding.UTF8.GetString(ms.ToArray());*/
+
+                    var range = new TextRange(RichTextEditor.Document.ContentStart, RichTextEditor.Document.ContentEnd);
+                    using (var ms = new MemoryStream())
+                    {
+                        range.Save(ms, DataFormats.Xaml);  // Zapisz jako XAML (cały FlowDocument)
+                        ms.Position = 0;
+                        using (var reader = new StreamReader(ms))
+                        {
+                            _vm.Note.Content = reader.ReadToEnd();  // Zapisz do Content w modelu
+                        }
+                    }
+
                 }
-                // W trybach Regular i CheckList bindingi zrobią resztę
             }
 
             DialogResult = dialogResult;

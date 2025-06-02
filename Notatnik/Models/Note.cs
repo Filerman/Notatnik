@@ -63,7 +63,9 @@ namespace Notatnik.Models
                         {
                             try
                             {
-                                var flowDoc = (FlowDocument)XamlReader.Parse(Content);
+                                var flowDoc = XamlReader.Parse(Content) as FlowDocument;
+                                if (flowDoc == null || flowDoc.ContentStart == null || flowDoc.ContentEnd == null)
+                                    return string.Empty;
                                 var textRange = new TextRange(flowDoc.ContentStart, flowDoc.ContentEnd);
                                 var plain = textRange.Text.Trim().Replace("\r", "").Replace("\n", " ");
                                 if (plain.Length <= 100) return plain;
