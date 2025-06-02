@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Notatnik.Migrations
 {
     /// <inheritdoc />
-    public partial class migracyja : Migration
+    public partial class wszystkodziala : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

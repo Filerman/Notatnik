@@ -4,7 +4,11 @@ namespace Notatnik.Views
 {
     public partial class FolderDetailsWindow : Window
     {
-        public string FolderName { get; private set; }
+        public string FolderName
+        {
+            get => TextBoxName.Text;
+            set => TextBoxName.Text = value;
+        }
 
         public FolderDetailsWindow()
         {
@@ -19,7 +23,6 @@ namespace Notatnik.Views
                 return;
             }
 
-            FolderName = TextBoxName.Text.Trim();
             DialogResult = true;
             Close();
         }

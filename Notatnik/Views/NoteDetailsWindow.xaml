@@ -27,22 +27,74 @@
                 <RowDefinition Height="Auto"/>
                 <!-- Tytuł -->
                 <RowDefinition Height="Auto"/>
-                <!-- CheckListPanel -->
+                <!-- Tagi -->
                 <RowDefinition Height="Auto"/>
+                <!-- CheckListPanel -->
+                <RowDefinition Height="*"/>
                 <!-- RegularPanel -->
                 <RowDefinition Height="*"/>
                 <!-- LongFormatPanel -->
             </Grid.RowDefinitions>
 
             <!-- 1. Pole Tytułu -->
-            <StackPanel Grid.Row="0" Margin="0,0,0,10">
-                <TextBlock Text="Tytuł:" FontWeight="Bold" Margin="0,0,0,5"/>
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
+                <TextBlock Text="Tytuł:"
+               FontWeight="Bold"
+               VerticalAlignment="Center"
+               Margin="0,0,10,0"/>
+
                 <TextBox Text="{Binding Note.Title, UpdateSourceTrigger=PropertyChanged}"
-                         Margin="0,0,0,0"/>
+         Height="22" Width="600"/>
+
             </StackPanel>
 
-            <!-- 2. CheckListPanel: widoczny tylko gdy Note.Type == CheckList -->
-            <Border Grid.Row="1"
+
+            <!-- 2. Pole do zarządzania tagami -->
+            <StackPanel Grid.Row="1" Margin="0,0,0,10">
+
+                <!-- W jednej linii: napis, ComboBox i przycisk -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
+                    <TextBlock Text="Tagi:   " FontWeight="Bold" Margin="0,0,5,0" VerticalAlignment="Center"/>
+
+                    <ComboBox Width="200"
+                  IsEditable="True"
+                  ItemsSource="{Binding AvailableTags}"
+                  Text="{Binding NewTagText, UpdateSourceTrigger=PropertyChanged}"
+                  ToolTip="Wybierz lub wpisz nowy tag"
+                  Margin="0,0,5,0"/>
+
+                    <Button Content="Dodaj"
+                Command="{Binding AddTagCommand}"
+                Width="60"/>
+                </StackPanel>
+
+                <!-- Lista obecnie przypisanych tagów z opcją usuwania -->
+                <ItemsControl ItemsSource="{Binding Tags}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,5,5">
+                                <Border Background="#EEE" CornerRadius="3" Padding="3,1">
+                                    <TextBlock Text="{Binding}" Foreground="Gray" FontStyle="Italic"/>
+                                </Border>
+                                <Button Content="X"
+                            Command="{Binding DataContext.RemoveTagCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            CommandParameter="{Binding}"
+                            Width="20" Height="20"
+                            Margin="5,0,0,0"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+            </StackPanel>
+
+            <!-- 3. CheckListPanel: widoczny tylko gdy Note.Type == CheckList -->
+            <Border Grid.Row="2"
                     BorderBrush="LightGray"
                     BorderThickness="1"
                     CornerRadius="4"
@@ -88,8 +140,8 @@
                 </StackPanel>
             </Border>
 
-            <!-- 3. RegularPanel: widoczny tylko gdy Note.Type == Regular -->
-            <Border Grid.Row="2"
+            <!-- 4. RegularPanel: widoczny tylko gdy Note.Type == Regular -->
+            <Border Grid.Row="3"
                     BorderBrush="LightGray"
                     BorderThickness="1"
                     CornerRadius="4"
@@ -117,8 +169,8 @@
                 </StackPanel>
             </Border>
 
-            <!-- 4. LongFormatPanel: widoczny tylko gdy Note.Type == LongFormat -->
-            <Border Grid.Row="3"
+            <!-- 5. LongFormatPanel: widoczny tylko gdy Note.Type == LongFormat -->
+            <Border Grid.Row="4"
                     BorderBrush="LightGray"
                     BorderThickness="1"
                     CornerRadius="4"

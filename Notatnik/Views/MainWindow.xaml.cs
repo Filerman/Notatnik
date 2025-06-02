@@ -1,6 +1,8 @@
 ﻿using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 using Notatnik.Models;
 using Notatnik.ViewModels;
 
@@ -13,11 +15,8 @@ namespace Notatnik.Views
         public MainWindow()
         {
             InitializeComponent();
-            // DataContext ustawia się już w XAML, nie nadpisujemy go ponownie
         }
 
-        // Jeśli użytkownik zmienia zaznaczenie wierszy ręcznie: 
-        // opcjonalnie możemy zaktualizować stan header‐checkboxa (czysto kosmetycznie).
         private void ListViewFolders_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (ViewModel == null) return;
@@ -25,7 +24,6 @@ namespace Notatnik.Views
                 ViewModel.SelectedFolder = ListViewFolders.SelectedItem as Folder;
         }
 
-        // Nagłówek: zaznacz wszystkie foldery
         private void HeaderCheckboxFolders_Checked(object sender, RoutedEventArgs e)
         {
             if (ViewModel == null) return;
@@ -33,7 +31,6 @@ namespace Notatnik.Views
                 folder.IsMarkedForDeletion = true;
         }
 
-        // Nagłówek: odznacz wszystkie foldery
         private void HeaderCheckboxFolders_Unchecked(object sender, RoutedEventArgs e)
         {
             if (ViewModel == null) return;
@@ -41,7 +38,6 @@ namespace Notatnik.Views
                 folder.IsMarkedForDeletion = false;
         }
 
-        // Nagłówek: zaznacz wszystkie notatki
         private void HeaderCheckboxNotes_Checked(object sender, RoutedEventArgs e)
         {
             if (ViewModel == null) return;
@@ -49,12 +45,31 @@ namespace Notatnik.Views
                 note.IsMarkedForDeletion = true;
         }
 
-        // Nagłówek: odznacz wszystkie notatki
         private void HeaderCheckboxNotes_Unchecked(object sender, RoutedEventArgs e)
         {
             if (ViewModel == null) return;
             foreach (var note in ViewModel.Notes)
                 note.IsMarkedForDeletion = false;
         }
+        private void ListViewNotes_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            var vm = DataContext as MainViewModel;
+            if (vm == null) return;
+
+            var originalSource = e.OriginalSource as DependencyObject;
+            while (originalSource != null && !(originalSource is ListViewItem))
+            {
+                originalSource = VisualTreeHelper.GetParent(originalSource);
+            }
+
+            if (originalSource is ListViewItem)
+            {
+                if (vm.SingleSelectedNote != null && vm.EditNoteCommand.CanExecute(null))
+                {
+                    vm.EditNoteCommand.Execute(null);
+                }
+            }
+        }
+
     }
 }
