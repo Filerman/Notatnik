@@ -3,12 +3,17 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:models="clr-namespace:Notatnik.Models"
         xmlns:ec="clr-namespace:System.Windows.Documents;assembly=PresentationFramework"
-        Title="Szczegóły notatki" Height="550" Width="650"
-        WindowStartupLocation="CenterOwner">
+        Title="Szczegóły notatki"
+        Width="650"
+        Height="600"
+        MaxHeight="700"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize">
 
+    <!-- DockPanel, w którym dolne przyciski są zadokowane, a reszta zawartości w ScrollViewer -->
     <DockPanel Margin="10">
 
-        <!-- Przyciski Zapisz / Anuluj na dole -->
+        <!-- 1. Przyciski Zapisz / Anuluj docelowo na dole -->
         <StackPanel Orientation="Horizontal"
                     DockPanel.Dock="Bottom"
                     HorizontalAlignment="Right"
@@ -21,269 +26,301 @@
                     Width="75" Margin="5,0"/>
         </StackPanel>
 
-        <!-- Cała zawartość bez zagnieżdżonych ScrollViewerów -->
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <!-- 0: Pole Tytułu -->
-                <RowDefinition Height="Auto"/>
-                <!-- 1: Pole Tagów -->
-                <RowDefinition Height="*"/>
-                <!-- 2: CheckListPanel -->
-                <RowDefinition Height="*"/>
-                <!-- 3: RegularPanel -->
-                <RowDefinition Height="*"/>
-                <!-- 4: LongFormatPanel -->
-            </Grid.RowDefinitions>
+        <!-- 2. ScrollViewer otaczający całą resztę treści -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <!-- 0: Pole Tytułu -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- 1: Pole Tagów -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- 2: CheckListPanel -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- 3: RegularPanel -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- 4: LongFormatPanel -->
+                </Grid.RowDefinitions>
 
-            <!-- 0. Pole Tytułu -->
-            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
-                <TextBlock Text="Tytuł:"
-                           FontWeight="Bold"
-                           VerticalAlignment="Center"
-                           Margin="0,0,10,0"/>
-                <TextBox Text="{Binding Note.Title, UpdateSourceTrigger=PropertyChanged}"
-                         Height="22" Width="600"/>
-            </StackPanel>
-
-            <!-- 2. Pole do zarządzania tagami -->
-            <StackPanel Grid.Row="1" Margin="0,0,0,10">
-                <!-- W jednej linii: napis, ComboBox (ze specjalnym stylem), przycisk Dodaj -->
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
-                    <TextBlock Text="Tagi:   " FontWeight="Bold" Margin="0,0,5,0" VerticalAlignment="Center"/>
-
-                    <ComboBox Width="200"
-                  IsEditable="True"
-                  ItemsSource="{Binding AvailableTags}"
-                  Text="{Binding NewTagText, UpdateSourceTrigger=PropertyChanged}"
-                  ToolTip="Wybierz lub wpisz nowy tag"
-                  Margin="0,0,5,0">
-                        <!-- 1) Ustawiamy, aby każdy ComboBoxItem rozciągał się na całą szerokość -->
-                        <ComboBox.ItemContainerStyle>
-                            <Style TargetType="ComboBoxItem">
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                            </Style>
-                        </ComboBox.ItemContainerStyle>
-
-                        <!-- 2) Definiujemy Grid: pierwsza kolumna "*" (tekst), druga "Auto" (przycisk) -->
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <!-- kolumna 0: wypełnia dostępną przestrzeń -->
-                                        <ColumnDefinition Width="*" />
-                                        <!-- kolumna 1: tylko na szerokość przycisku -->
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <!-- Tekst taga po lewej, zajmuje całą przestrzeń kolumny 0 -->
-                                    <TextBlock Text="{Binding}"
-                                   Grid.Column="0"
-                                   VerticalAlignment="Center"
-                                   Margin="5,0"/>
-
-                                    <!-- Przycisk '×' wyrównany do prawej (kolumna 1) -->
-                                    <Button Grid.Column="1"
-                                Content="×"
-                                Command="{Binding DataContext.RemoveAvailableTagCommand,
-                                                  RelativeSource={RelativeSource AncestorType=Window}}"
-                                CommandParameter="{Binding}"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                Foreground="Red"
-                                FontWeight="Bold"
-                                Padding="0"
-                                Width="20"
-                                Height="20"
-                                Margin="5,0,5,0"/>
-                                </Grid>
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-
-                    <Button Content="Dodaj"
-                Command="{Binding AddTagCommand}"
-                Width="60"/>
+                <!-- 2.0. Pole Tytułu -->
+                <StackPanel Grid.Row="0"
+                            Orientation="Horizontal"
+                            Margin="0,0,0,10"
+                            VerticalAlignment="Center">
+                    <TextBlock Text="Tytuł:"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center"
+                               Margin="0,0,10,0"/>
+                    <TextBox Text="{Binding Note.Title, UpdateSourceTrigger=PropertyChanged}"
+                             Height="22"
+                             Width="600"/>
                 </StackPanel>
 
-                <!-- Lista obecnie przypisanych tagów (bez zmian od Ciebie) -->
-                <ItemsControl ItemsSource="{Binding Tags}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <WrapPanel/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,5,5">
-                                <Border Background="#EEE" CornerRadius="3" Padding="3,1">
-                                    <TextBlock Text="{Binding}" Foreground="Gray" FontStyle="Italic"/>
-                                </Border>
-                                <Button Content="×"
-                            Command="{Binding DataContext.RemoveTagCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                            CommandParameter="{Binding}"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Foreground="Red"
-                            FontWeight="Bold"
-                            Padding="0"
-                            Width="20"
-                            Height="20"
-                            Margin="5,0,0,0"/>
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <!-- 2.1. Pole do zarządzania tagami -->
+                <StackPanel Grid.Row="1"
+                            Margin="0,0,0,10">
+                    <!-- 2.1.1. ComboBox + przycisk "Dodaj" w jednej linii -->
+                    <StackPanel Orientation="Horizontal"
+                                Margin="0,0,0,10"
+                                VerticalAlignment="Center">
+                        <TextBlock Text="Tagi:   "
+                                   FontWeight="Bold"
+                                   Margin="0,0,5,0"
+                                   VerticalAlignment="Center"/>
 
-            </StackPanel>
+                        <ComboBox Width="200"
+                                  IsEditable="True"
+                                  ItemsSource="{Binding AvailableTags}"
+                                  Text="{Binding NewTagText, UpdateSourceTrigger=PropertyChanged}"
+                                  ToolTip="Wybierz lub wpisz nowy tag"
+                                  Margin="0,0,5,0">
+                            <!-- Każdy ComboBoxItem rozciąga się na całą szerokość -->
+                            <ComboBox.ItemContainerStyle>
+                                <Style TargetType="ComboBoxItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                </Style>
+                            </ComboBox.ItemContainerStyle>
 
+                            <!-- Tekst + przycisk "×" -->
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
 
-            <!-- 2. CheckListPanel: widoczny tylko gdy Note.Type == CheckList -->
-            <Border Grid.Row="2"
-                    BorderBrush="LightGray"
-                    BorderThickness="1"
-                    CornerRadius="4"
-                    Padding="5"
-                    Margin="0,0,0,10">
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding Note.Type}"
-                                         Value="{x:Static models:NoteType.CheckList}">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
+                                        <!-- Kolumna 0: nazwa taga -->
+                                        <TextBlock Text="{Binding}"
+                                                   Grid.Column="0"
+                                                   VerticalAlignment="Center"
+                                                   Margin="5,0"/>
 
-                <StackPanel>
-                    <TextBlock Text="Elementy listy (CheckList):"
-                               FontWeight="Bold"
-                               Margin="0,0,0,5"/>
+                                        <!-- Kolumna 1: przycisk "×" -->
+                                        <Button Grid.Column="1"
+                                                Content="×"
+                                                Command="{Binding DataContext.RemoveAvailableTagCommand,
+                                                                  RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Foreground="Red"
+                                                FontWeight="Bold"
+                                                Padding="0"
+                                                Width="20"
+                                                Height="20"
+                                                Margin="5,0,5,0"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
 
-                    <ItemsControl ItemsSource="{Binding ChecklistItems}">
+                        <Button Content="Dodaj"
+                                Command="{Binding AddTagCommand}"
+                                Width="60"/>
+                    </StackPanel>
+
+                    <!-- 2.1.2. Lista już przypisanych tagów -->
+                    <ItemsControl ItemsSource="{Binding Tags}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <StackPanel Orientation="Horizontal" Margin="0,2">
-                                    <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}"
-                                              VerticalAlignment="Center"/>
-                                    <TextBox Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             Width="380" Margin="5,0"/>
+                                <StackPanel Orientation="Horizontal"
+                                            Margin="0,0,5,5">
+                                    <Border Background="#EEE"
+                                            CornerRadius="3"
+                                            Padding="3,1">
+                                        <TextBlock Text="{Binding}"
+                                                   Foreground="Gray"
+                                                   FontStyle="Italic"/>
+                                    </Border>
                                     <Button Content="×"
-                                            Command="{Binding DataContext.RemoveItemCommand,
+                                            Command="{Binding DataContext.RemoveTagCommand,
                                                               RelativeSource={RelativeSource AncestorType=Window}}"
                                             CommandParameter="{Binding}"
-                                            Width="20" Height="20"
-                                            Margin="5,0"
                                             Background="Transparent"
                                             BorderThickness="0"
                                             Foreground="Red"
                                             FontWeight="Bold"
-                                            Padding="0"/>
+                                            Padding="0"
+                                            Width="20"
+                                            Height="20"
+                                            Margin="5,0,0,0"/>
                                 </StackPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-
-                    <Button Content="Dodaj element"
-                            Command="{Binding AddItemCommand}"
-                            Margin="0,10,0,0"
-                            Width="110"/>
                 </StackPanel>
-            </Border>
 
-            <!-- 3. RegularPanel: widoczny tylko gdy Note.Type == Regular -->
-            <Border Grid.Row="3"
-                    BorderBrush="LightGray"
-                    BorderThickness="1"
-                    CornerRadius="4"
-                    Padding="5"
-                    Margin="0,0,0,10">
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding Note.Type}"
-                                         Value="{x:Static models:NoteType.Regular}">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
+                <!-- 2.2. CheckListPanel: widoczny tylko gdy Note.Type == CheckList -->
+                <Border Grid.Row="2"
+                        BorderBrush="LightGray"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="5"
+                        Margin="0,0,0,10">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Note.Type}"
+                                             Value="{x:Static models:NoteType.CheckList}">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
 
-                <StackPanel>
-                    <TextBlock Text="Treść notatki (Regular):"
-                               FontWeight="Bold"
-                               Margin="0,0,0,5"/>
-                    <TextBox Text="{Binding Note.Content, UpdateSourceTrigger=LostFocus}"
-                             AcceptsReturn="True"
-                             VerticalScrollBarVisibility="Auto"
-                             Height="200"/>
-                </StackPanel>
-            </Border>
+                    <!-- StackPanel zawiera etykietę, ItemsControl i przycisk -->
+                    <StackPanel>
+                        <TextBlock Text="Elementy listy (CheckList):"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,5"/>
 
-            <!-- 4. LongFormatPanel: widoczny tylko gdy Note.Type == LongFormat -->
-            <Border Grid.Row="4"
-                    BorderBrush="LightGray"
-                    BorderThickness="1"
-                    CornerRadius="4"
-                    Padding="5">
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding Note.Type}"
-                                         Value="{x:Static models:NoteType.LongFormat}">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
+                        <!-- Każdy element checklisty w pionowej liście -->
+                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                      MaxHeight="200">
+                            <ItemsControl ItemsSource="{Binding ChecklistItems}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal"
+                                                    Margin="0,2">
+                                            <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                                                      VerticalAlignment="Center"/>
+                                            <TextBox Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                     Width="380"
+                                                     Margin="5,0"/>
+                                            <Button Content="×"
+                                                    Command="{Binding DataContext.RemoveItemCommand,
+                                                                      RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"
+                                                    Width="20"
+                                                    Height="20"
+                                                    Margin="5,0"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Foreground="Red"
+                                                    FontWeight="Bold"
+                                                    Padding="0"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
 
-                <DockPanel>
-                    <!-- Pasek narzędzi do formatowania (na górze) -->
-                    <ToolBar DockPanel.Dock="Top" Margin="0,0,0,5">
-                        <Button Command="{x:Static ec:EditingCommands.ToggleBold}"
-                                CommandTarget="{Binding ElementName=RichTextEditor}"
-                                Content="B"
-                                FontWeight="Bold"
-                                Width="25"
-                                ToolTip="Pogrubienie"/>
-                        <Button Command="{x:Static ec:EditingCommands.ToggleItalic}"
-                                CommandTarget="{Binding ElementName=RichTextEditor}"
-                                Content="I"
-                                FontStyle="Italic"
-                                Width="25"
-                                ToolTip="Kursywa"/>
-                        <Button Command="{x:Static ec:EditingCommands.ToggleUnderline}"
-                                CommandTarget="{Binding ElementName=RichTextEditor}"
-                                Width="25"
-                                ToolTip="Podkreślenie">
-                            <TextBlock Text="U"
-                                       TextDecorations="Underline"
-                                       HorizontalAlignment="Center"/>
-                        </Button>
-                        <Separator/>
-                        <!-- Strzałki wywołują eventy w code-behind -->
-                        <Button Content="→"
-                                Width="25"
-                                Margin="2,0"
-                                ToolTip="Zwiększ wcięcie"
-                                Click="IncreaseIndentation_Click"/>
-                        <Button Content="←"
-                                Width="25"
-                                Margin="2,0"
-                                ToolTip="Zmniejsz wcięcie"
-                                Click="DecreaseIndentation_Click"/>
-                    </ToolBar>
+                        <Button Content="Dodaj element"
+                                Command="{Binding AddItemCommand}"
+                                Margin="0,10,0,0"
+                                Width="110"/>
+                    </StackPanel>
+                </Border>
 
-                    <!-- RichTextBox wypełnia pozostałą przestrzeń -->
-                    <RichTextBox x:Name="RichTextEditor"
-                                 VerticalScrollBarVisibility="Auto"/>
-                </DockPanel>
-            </Border>
+                <!-- 2.3. RegularPanel: widoczny tylko gdy Note.Type == Regular -->
+                <Border Grid.Row="3"
+                        BorderBrush="LightGray"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="5"
+                        Margin="0,0,0,10">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Note.Type}"
+                                             Value="{x:Static models:NoteType.Regular}">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
 
-        </Grid>
+                    <StackPanel>
+                        <TextBlock Text="Treść notatki (Regular):"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,5"/>
+                        <!-- TextBox rośnie do MaxHeight, potem włącza scrollbar -->
+                        <TextBox Text="{Binding Note.Content, UpdateSourceTrigger=PropertyChanged}"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto"
+                                 MinHeight="100"
+                                 MaxHeight="200"
+                                 Margin="0,0,0,5"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- 2.4. LongFormatPanel: widoczny tylko gdy Note.Type == LongFormat -->
+                <Border Grid.Row="4"
+                        BorderBrush="LightGray"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="5">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Note.Type}"
+                                             Value="{x:Static models:NoteType.LongFormat}">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+
+                    <DockPanel>
+                        <!-- Pasek narzędzi do formatowania (u góry) -->
+                        <ToolBar DockPanel.Dock="Top" Margin="0,0,0,5">
+                            <Button Command="{x:Static ec:EditingCommands.ToggleBold}"
+                                    CommandTarget="{Binding ElementName=RichTextEditor}"
+                                    Content="B"
+                                    FontWeight="Bold"
+                                    Width="25"
+                                    ToolTip="Pogrubienie"/>
+                            <Button Command="{x:Static ec:EditingCommands.ToggleItalic}"
+                                    CommandTarget="{Binding ElementName=RichTextEditor}"
+                                    Content="I"
+                                    FontStyle="Italic"
+                                    Width="25"
+                                    ToolTip="Kursywa"/>
+                            <Button Command="{x:Static ec:EditingCommands.ToggleUnderline}"
+                                    CommandTarget="{Binding ElementName=RichTextEditor}"
+                                    Width="25"
+                                    ToolTip="Podkreślenie">
+                                <TextBlock Text="U"
+                                           TextDecorations="Underline"
+                                           HorizontalAlignment="Center"/>
+                            </Button>
+                            <Separator/>
+                            <Button Content="→"
+                                    Width="25"
+                                    Margin="2,0"
+                                    ToolTip="Zwiększ wcięcie"
+                                    Click="IncreaseIndentation_Click"/>
+                            <Button Content="←"
+                                    Width="25"
+                                    Margin="2,0"
+                                    ToolTip="Zmniejsz wcięcie"
+                                    Click="DecreaseIndentation_Click"/>
+                        </ToolBar>
+
+                        <!-- ScrollViewer zawijający RichTextBox; ogranicza maksymalną wysokość -->
+                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                      MaxHeight="300">
+                            <RichTextBox x:Name="RichTextEditor"
+                                         VerticalScrollBarVisibility="Auto"
+                                         MinHeight="150"
+                                         AcceptsReturn="True"
+                                         HorizontalAlignment="Stretch"
+                                         VerticalAlignment="Stretch"/>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+            </Grid>
+        </ScrollViewer>
     </DockPanel>
 </Window>
