@@ -73,15 +73,15 @@ namespace Notatnik.ViewModels
             DeleteMarkedNotesCommand = new RelayCommand(_ => DeleteMarkedNotes(), _ => Notes.Any(n => n.IsMarkedForDeletion));
             AddFolderCommand = new RelayCommand(_ => AddFolder());
             DeleteMarkedFoldersCommand = new RelayCommand(_ => DeleteMarkedFolders(), _ => Folders.Any(f => f.IsMarkedForDeletion));
+            EditFolderCommand = new RelayCommand(_ => EditFolder(), _ => SelectedFolder != null);
             AddCheckboxNoteCommand = new RelayCommand(_ => AddCheckboxNote(), _ => SelectedFolder != null);
             AddLongNoteCommand = new RelayCommand(_ => AddLongNote(), _ => SelectedFolder != null);
-            SearchCommand = new RelayCommand(_ => Search());
+            SearchCommand = new RelayCommand(_ => OpenSearchWindow());
             PrintCommand = new RelayCommand(_ => Print());
-            EditFolderCommand = new RelayCommand(_ => EditFolder(), _ => SelectedFolder != null);
 
             if (Folders.Any())
                 SelectedFolder = Folders.First();
-            }
+        }
 
         private void LoadNotes()
         {
@@ -257,10 +257,34 @@ namespace Notatnik.ViewModels
             _db.Folders.Remove(folder);
         }
 
-        private void Search()
+        private void OpenSearchWindow()
         {
-            //var searchWindow = new SearchWindow(); // zaimplementuj to okno, jeśli jeszcze go nie masz
-            //searchWindow.ShowDialog();
+            // Otwiera niemodalne okno wyszukiwania, przekazując DbContext i instancję MainViewModel
+            var searchWin = new SearchWindow(_db, this);
+            searchWin.Owner = Application.Current.MainWindow;
+            searchWin.Show();
+        }
+
+        /// <summary>
+        /// Metoda wywoływana przez SearchViewModel po dwukliku w wynikach,
+        /// aby otworzyć wybraną notatkę w edycji.
+        /// </summary>
+        public void OpenNoteForEdit(Note noteToEdit)
+        {
+            if (noteToEdit == null) return;
+
+            // Ustawienie wybranej notatki w głównej liście (podświetlenie)
+            SingleSelectedNote = Notes.FirstOrDefault(n => n.Id == noteToEdit.Id);
+
+            // Uruchamiamy okno edycji notatki
+            var vm = new NoteDetailsViewModel(noteToEdit, _db);
+            var win = new NoteDetailsWindow(vm);
+            if (win.ShowDialog() == true)
+            {
+                noteToEdit.ModifiedAt = DateTime.Now;
+                _db.SaveChanges();
+                LoadNotes();
+            }
         }
 
         private void Print()
@@ -281,6 +305,7 @@ namespace Notatnik.ViewModels
                 printDialog.PrintDocument(((System.Windows.Documents.IDocumentPaginatorSource)doc).DocumentPaginator, "Drukowanie notatki");
             }
         }
+
         private void EditFolder()
         {
             if (SelectedFolder == null) return;
