@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.IO;
 using System.Linq;
+using System.Text;
+using System.Windows;
 using System.Windows.Documents;
-using System.Windows.Markup;
 
 namespace Notatnik.Models
 {
@@ -19,7 +21,10 @@ namespace Notatnik.Models
     {
         public int Id { get; set; }
         public string Title { get; set; }
+
+        // Zawartość notatki – dla LongFormat będzie to XAML z RichTextBoxa.
         public string Content { get; set; }
+
         public NoteType Type { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime ModifiedAt { get; set; }
@@ -31,7 +36,6 @@ namespace Notatnik.Models
         public List<Tag> Tags { get; set; } = new List<Tag>();
 
         private bool _isMarkedForDeletion = false;
-
         [NotMapped]
         public bool IsMarkedForDeletion
         {
@@ -63,12 +67,21 @@ namespace Notatnik.Models
                         {
                             try
                             {
-                                var flowDoc = XamlReader.Parse(Content) as FlowDocument;
-                                if (flowDoc == null || flowDoc.ContentStart == null || flowDoc.ContentEnd == null)
-                                    return string.Empty;
+                                // Tworzymy nowy pusty FlowDocument, aby załadować do niego XAML z Content.
+                                var flowDoc = new FlowDocument();
                                 var textRange = new TextRange(flowDoc.ContentStart, flowDoc.ContentEnd);
+
+                                // Zamieniamy Content (ciąg XAML) na strumień bajtów
+                                using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(Content)))
+                                {
+                                    // Ładujemy strumień jako XAML do `flowDoc`
+                                    textRange.Load(ms, DataFormats.Xaml);
+                                }
+
+                                // Teraz textRange.Text zawiera już czysty tekst
                                 var plain = textRange.Text.Trim().Replace("\r", "").Replace("\n", " ");
-                                if (plain.Length <= 100) return plain;
+                                if (plain.Length <= 100)
+                                    return plain;
                                 return plain.Substring(0, 100) + ".";
                             }
                             catch
@@ -82,7 +95,8 @@ namespace Notatnik.Models
                         if (!string.IsNullOrEmpty(Content))
                         {
                             var plain = Content.Trim().Replace("\r", "").Replace("\n", " ");
-                            if (plain.Length <= 100) return plain;
+                            if (plain.Length <= 100)
+                                return plain;
                             return plain.Substring(0, 100) + ".";
                         }
                         return string.Empty;
