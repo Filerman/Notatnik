@@ -87,6 +87,7 @@ namespace Notatnik.ViewModels
                 var matches = _db.Notes
                                  .Include(n => n.Tags)
                                  .Include(n => n.ChecklistItems)
+                                 .Include(n => n.Folder)
                                  .Where(n =>
                                      // 1) Tytuł
                                      EF.Functions.Like(n.Title.ToLower(), $"%{query}%")

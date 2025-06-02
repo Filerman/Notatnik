@@ -4,7 +4,7 @@
         xmlns:models="clr-namespace:Notatnik.Models"
         xmlns:vm="clr-namespace:Notatnik.ViewModels"
         Title="Wyszukaj notatki"
-        Width="800"
+        Width="950"
         Height="500"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
@@ -13,12 +13,12 @@
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- 0: Panel wyszukiwania -->
+            <!-- 0: Pasek wyszukiwania -->
             <RowDefinition Height="*"/>
             <!-- 1: Lista wyników -->
         </Grid.RowDefinitions>
 
-        <!-- 0. Panel wyszukiwania -->
+        <!-- 0. Pasek wyszukiwania -->
         <StackPanel Orientation="Horizontal"
                     Grid.Row="0"
                     Margin="0,0,0,10">
@@ -28,7 +28,7 @@
                      Margin="0,0,10,0"
                      VerticalContentAlignment="Center"
                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                     ToolTip="Wpisz część tytułu, treści lub nazwy tagu..." />
+                     ToolTip="Wpisz fragment tytułu, treści, tagu lub folderu..." />
 
             <Button Content="Szukaj"
                     Width="80"
@@ -44,11 +44,13 @@
         <ListView Grid.Row="1"
                   ItemsSource="{Binding SearchResults}"
                   SelectedItem="{Binding SelectedResult}"
-                  MouseDoubleClick="ListViewResults_MouseDoubleClick">
+                  MouseDoubleClick="ListViewResults_MouseDoubleClick"
+                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                  ScrollViewer.VerticalScrollBarVisibility="Auto">
             <ListView.View>
                 <GridView>
                     <!-- Kolumna: Tytuł -->
-                    <GridViewColumn Header="Tytuł" Width="250">
+                    <GridViewColumn Header="Tytuł" Width="200">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Title}" TextWrapping="NoWrap"/>
@@ -56,8 +58,8 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
-                    <!-- Kolumna: Snippet -->
-                    <GridViewColumn Header="Podgląd" Width="300">
+                    <!-- Kolumna: Podgląd -->
+                    <GridViewColumn Header="Podgląd" Width="220">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Snippet}" TextWrapping="NoWrap"/>
@@ -65,7 +67,39 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
-                    <!-- Kolumna: Data modyfikacji -->
+                    <!-- Kolumna: Folder -->
+                    <GridViewColumn Header="Folder" Width="140">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Folder.Name}" TextWrapping="NoWrap"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <!-- Kolumna: Tagi -->
+                    <GridViewColumn Header="Tagi" Width="220">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <ItemsControl ItemsSource="{Binding Tags}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Name}"
+                                                       Margin="0,0,5,0"
+                                                       Foreground="Gray"
+                                                       FontStyle="Italic"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <!-- Kolumna: Zmodyfikowano -->
                     <GridViewColumn Header="Zmodyfikowano" Width="130">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
