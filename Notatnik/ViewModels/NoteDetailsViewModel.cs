@@ -61,23 +61,27 @@ namespace Notatnik.ViewModels
             Note = note ?? throw new ArgumentNullException(nameof(note));
             _db = db ?? throw new ArgumentNullException(nameof(db));
 
-            // 1) Wczytanie checklisty (jeśli Note.Type == CheckList), w przeciwnym razie pusta lista
+            // 1) Upewnij się, że relacje Note.Tags i Note.ChecklistItems są załadowane
+            _db.Entry(Note).Collection(n => n.Tags).Load();
+            _db.Entry(Note).Collection(n => n.ChecklistItems).Load();
+
+            // 2) Wczytanie checklisty (jeśli Note.Type == CheckList), w przeciwnym razie pusta lista
             ChecklistItems = new ObservableCollection<ChecklistItem>(
                 note.Type == NoteType.CheckList
                     ? note.ChecklistItems
                     : Array.Empty<ChecklistItem>()
             );
 
-            // 2) Wczytaj z Note istniejące tagi (same nazwy) do kolekcji Tags
+            // 3) Wczytaj z Note istniejące tagi (same nazwy) do kolekcji Tags
             if (note.Tags != null)
             {
-                foreach (var tag in note.Tags)
+                foreach (var tag in note.Tags.OrderBy(t => t.Name))
                 {
                     Tags.Add(tag.Name);
                 }
             }
 
-            // 3) Załaduj wszystkie dostępne tagi z bazy do AvailableTags (ComboBox)
+            // 4) Załaduj wszystkie dostępne tagi z bazy do AvailableTags (ComboBox)
             var allTags = _db.Tags
                              .AsNoTracking()
                              .Select(t => t.Name)
@@ -88,7 +92,7 @@ namespace Notatnik.ViewModels
                 AvailableTags.Add(tagName);
             }
 
-            // 4) Inicjalizacja komend
+            // 5) Inicjalizacja komend
             AddItemCommand = new RelayCommand(_ => AddItem());
             RemoveItemCommand = new RelayCommand(o => RemoveItem(o as ChecklistItem), o => o is ChecklistItem);
 
@@ -205,9 +209,8 @@ namespace Notatnik.ViewModels
             OnPropertyChanged(nameof(Tags));
         }
 
-
         /// <summary>
-        /// Przy zapisie notatki: tworzymy/aktualizujemy relacje wiele-do-wielu Note-&gt;Tag.
+        /// Przy zapisie notatki: tworzymy/aktualizujemy relacje wiele-do-wielu Note->Tag.
         /// </summary>
         private void SaveTagsToNote()
         {
@@ -240,7 +243,7 @@ namespace Notatnik.ViewModels
                 }
             }
 
-            // 4) Zapisz w bazie (zarówno nowe entitiy Tag, jak i relacje wiele-do-wielu)
+            // 4) Zapisz w bazie (zarówno nowe encje Tag, jak i relacje wiele-do-wielu)
             _db.SaveChanges();
         }
 
