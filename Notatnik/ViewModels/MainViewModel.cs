@@ -25,6 +25,7 @@ namespace Notatnik.ViewModels
         public ICommand AddFolderCommand { get; }
         public ICommand DeleteMarkedFoldersCommand { get; }
         public ICommand EditFolderCommand { get; }
+        public ICommand AddTextNoteCommand { get; }
         public ICommand AddCheckboxNoteCommand { get; }
         public ICommand AddLongNoteCommand { get; }
         public ICommand SearchCommand { get; }
@@ -74,6 +75,7 @@ namespace Notatnik.ViewModels
             AddFolderCommand = new RelayCommand(_ => AddFolder());
             DeleteMarkedFoldersCommand = new RelayCommand(_ => DeleteMarkedFolders(), _ => Folders.Any(f => f.IsMarkedForDeletion));
             EditFolderCommand = new RelayCommand(_ => EditFolder(), _ => SelectedFolder != null);
+            AddTextNoteCommand = new RelayCommand(_ => AddTextNote(), _ => SelectedFolder != null);
             AddCheckboxNoteCommand = new RelayCommand(_ => AddCheckboxNote(), _ => SelectedFolder != null);
             AddLongNoteCommand = new RelayCommand(_ => AddLongNote(), _ => SelectedFolder != null);
             SearchCommand = new RelayCommand(_ => OpenSearchWindow());
@@ -111,6 +113,27 @@ namespace Notatnik.ViewModels
                 ModifiedAt = DateTime.Now,
                 FolderId = SelectedFolder.Id,
                 Type = typeDlg.SelectedType,
+                Content = string.Empty
+            };
+
+            var vm = new NoteDetailsViewModel(note, _db);
+            var win = new NoteDetailsWindow(vm);
+            if (win.ShowDialog() == true)
+            {
+                _db.Notes.Add(note);
+                _db.SaveChanges();
+                LoadNotes();
+            }
+        }
+
+        private void AddTextNote()
+        {
+            var note = new Note
+            {
+                CreatedAt = DateTime.Now,
+                ModifiedAt = DateTime.Now,
+                FolderId = SelectedFolder.Id,
+                Type = NoteType.Regular,
                 Content = string.Empty
             };
 

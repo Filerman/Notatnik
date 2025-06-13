@@ -11,15 +11,17 @@
     </Window.DataContext>
 
     <DockPanel>
-
         <!-- Menu główne -->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_Plik">
-                <MenuItem Header="Nowa notatka tekstowa" Command="{Binding AddNoteCommand}" />
+                <MenuItem Header="Nowa...">
+                    <MenuItem Header="Notatka tekstowa" Command="{Binding AddTextNoteCommand}" />
+                    <MenuItem Header="Notatka lista zadań" Command="{Binding AddCheckboxNoteCommand}" />
+                    <MenuItem Header="Notatka formatowana" Command="{Binding AddLongNoteCommand}" />
+                </MenuItem>
                 <Separator/>
                 <MenuItem Header="Zamknij" Command="{Binding ExitCommand}" />
             </MenuItem>
-
             <MenuItem Header="_Edycja">
                 <MenuItem Header="Zarządzaj folderami" Command="{Binding ManageFoldersCommand}" />
             </MenuItem>
@@ -28,7 +30,7 @@
         <!-- Pasek narzędzi -->
         <ToolBarTray DockPanel.Dock="Top">
             <ToolBar>
-                <Button Content="📝" ToolTip="Nowa notatka tekstowa" Command="{Binding AddNoteCommand}" />
+                <Button Content="📝" ToolTip="Nowa notatka tekstowa" Command="{Binding AddTextNoteCommand}" />
                 <Button Content="☑️" ToolTip="Nowa notatka typu checkbox" Command="{Binding AddCheckboxNoteCommand}" />
                 <Button Content="📄" ToolTip="Nowa długa notatka" Command="{Binding AddLongNoteCommand}" />
                 <Separator/>
@@ -38,7 +40,6 @@
                 <Button Content="🖨" ToolTip="Drukuj" Command="{Binding PrintCommand}" />
             </ToolBar>
         </ToolBarTray>
-
 
         <!-- Główna część -->
         <Grid>
@@ -79,14 +80,6 @@
                     </ListView.View>
                 </ListView>
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,5,0,0" Grid.Row="2">
-                    <Button Content="Dodaj" Width="70" Margin="0,0,5,0"
-                            Command="{Binding AddFolderCommand}"/>
-                    <Button Content="Edytuj" Width="70" Margin="0,0,5,0"
-                            Command="{Binding EditFolderCommand}"/>
-                    <Button Content="Usuń zaznaczone" Width="120"
-                            Command="{Binding DeleteMarkedFoldersCommand}"/>
-                </StackPanel>
             </Grid>
 
             <!-- Separator -->
@@ -160,14 +153,6 @@
                 </ListView>
 
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,5,0,0" Grid.Row="2">
-                    <Button Content="Dodaj notatkę" Width="100" Margin="0,0,5,0"
-                Command="{Binding AddNoteCommand}"/>
-                    <Button Content="Edytuj notatkę" Width="100" Margin="0,0,5,0"
-                Command="{Binding EditNoteCommand}"/>
-                    <Button Content="Usuń zaznaczone" Width="120"
-                Command="{Binding DeleteMarkedNotesCommand}"/>
-                </StackPanel>
             </Grid>
         </Grid>
     </DockPanel>
