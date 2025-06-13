@@ -13,31 +13,49 @@
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- 0: Pasek wyszukiwania -->
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <!-- 1: Lista wyników -->
         </Grid.RowDefinitions>
 
-        <!-- 0. Pasek wyszukiwania -->
-        <StackPanel Orientation="Horizontal"
-                    Grid.Row="0"
-                    Margin="0,0,0,10">
-            <TextBox x:Name="SearchTextBox"
-                     Width="300"
+        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,10">
+            <GroupBox Header="Wyszukiwanie" Margin="10,0,0,0" Padding="5">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBox x:Name="SearchTextBox"
+                     Width="250"
                      Height="25"
                      Margin="0,0,10,0"
                      VerticalContentAlignment="Center"
                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                      ToolTip="Wpisz fragment tytułu, treści, tagu lub folderu..." />
 
-            <Button Content="Szukaj"
+                    <Button Content="Szukaj"
                     Width="80"
+                    Height="25"
                     Command="{Binding SearchNotesCommand}"
                     Margin="0,0,10,0"/>
 
-            <Button Content="Wyczyść"
+                    <Button Content="Wyczyść"
                     Width="80"
+                    Height="25"
                     Command="{Binding ClearCommand}" />
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Filtry" Margin="10,0,0,0" Padding="5">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <CheckBox Content="Tytuł" Margin="5" IsChecked="{Binding SortByTitle}"/>
+                    <CheckBox Content="Folder" Margin="5" IsChecked="{Binding SortByFolder}"/>
+                    <CheckBox Content="Treść" Margin="5" IsChecked="{Binding SortByContent}"/>
+                    <CheckBox Content="Tagi" Margin="5" IsChecked="{Binding SortByTags}"/>
+
+                    <Button Content="Zastosuj" 
+                    Width="80"
+                    Height="25"
+                    Margin="10,0,0,0" 
+                    Command="{Binding ApplySortingCommand}"
+                    ToolTip="Zastosuj wybrane kryteria sortowania"/>
+                </StackPanel>
+            </GroupBox>
         </StackPanel>
 
         <!-- 1. Lista wyników wyszukiwania -->

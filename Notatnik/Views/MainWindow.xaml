@@ -29,6 +29,11 @@
             <MenuItem Header="_Edycja">
                 <MenuItem Header="Zarządzaj folderami" Command="{Binding ManageFoldersCommand}" />
             </MenuItem>
+            <MenuItem Header="|" IsEnabled="False" Focusable="False"/>
+            <MenuItem Header="_Statystyki">
+                <MenuItem Header="Dane" />
+                <MenuItem Header="Wykres..." />
+            </MenuItem>
         </Menu>
 
         <!-- Pasek narzędzi -->
