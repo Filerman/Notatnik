@@ -6,12 +6,13 @@
         WindowStartupLocation="CenterScreen"
         FontFamily="Segoe UI" FontSize="12">
 
+    <!-- View-model -->
     <Window.DataContext>
         <vm:MainViewModel/>
     </Window.DataContext>
 
     <DockPanel>
-        <!-- Menu główne -->
+        <!--Menu główne (bez zmian) -->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_Plik">
                 <MenuItem Header="Nowy...">
@@ -36,7 +37,7 @@
             </MenuItem>
         </Menu>
 
-        <!-- Pasek narzędzi -->
+        <!-- Pasek narzędzi (bez zmian) -->
         <ToolBarTray DockPanel.Dock="Top">
             <ToolBar>
                 <Button Content="📝" ToolTip="Nowa notatka tekstowa" Command="{Binding AddTextNoteCommand}" />
@@ -60,7 +61,7 @@
                 <ColumnDefinition Width="4*" />
             </Grid.ColumnDefinitions>
 
-            <!-- Foldery -->
+            <!--  Foldery (bez zmian) -->
             <Grid Grid.Column="0" Margin="5">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -90,13 +91,12 @@
                         </GridView>
                     </ListView.View>
                 </ListView>
-
             </Grid>
 
             <!-- Separator -->
             <Border Grid.Column="1" Background="LightGray" Width="1" HorizontalAlignment="Stretch" />
 
-            <!-- Notatki -->
+            <!--  Notatki  -->
             <Grid Grid.Column="2" Margin="5">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -107,28 +107,39 @@
                 <TextBlock Text="Notatki" FontSize="14" FontWeight="Bold" Margin="0,0,0,5" Grid.Row="0"/>
 
                 <ListView x:Name="ListViewNotes"
-                Grid.Row="1"
-                ItemsSource="{Binding Notes}"
-                SelectedItem="{Binding SingleSelectedNote}"
-                SelectionMode="Single"
-                HorizontalAlignment="Stretch"
-                MouseDoubleClick="ListViewNotes_MouseDoubleClick">
+                          Grid.Row="1"
+                          ItemsSource="{Binding Notes}"
+                          SelectedItem="{Binding SingleSelectedNote}"
+                          SelectionMode="Single"
+                          HorizontalAlignment="Stretch"
+                          MouseDoubleClick="ListViewNotes_MouseDoubleClick">
+
+                    <!-- ▼ NOWE + istniejące pozycje PPM -->
                     <ListView.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Header="Edytuj" Command="{Binding EditNoteCommand}" 
-                      CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
-                            <MenuItem Header="Usuń" Command="{Binding DeleteNoteCommand}" 
-                      CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
-                            <MenuItem Header="Usuń zaznaczone" Command="{Binding DeleteMarkedNotesCommand}" 
-                      CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
+                            <MenuItem Header="Edytuj"
+                                      Command="{Binding EditNoteCommand}"
+                                      CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
+                            <MenuItem Header="Usuń"
+                                      Command="{Binding DeleteNoteCommand}"
+                                      CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
+                            <MenuItem Header="Usuń zaznaczone"
+                                      Command="{Binding DeleteMarkedNotesCommand}"/>
+                            <!--  NOWE POLECENIE -->
+                            <MenuItem Header="Przenieś do folderu..."
+                                      Command="{Binding MoveNoteCommand}"
+                                      CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
+                            <!--  -->
                             <Separator/>
-                            <MenuItem Header="Właściwości" Command="{Binding NotePropertiesCommand}" 
-                      CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
+                            <MenuItem Header="Właściwości"
+                                      Command="{Binding NotePropertiesCommand}"
+                                      CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
                         </ContextMenu>
                     </ListView.ContextMenu>
+
+                    <!-- Widok kolumn (bez zmian) -->
                     <ListView.View>
                         <GridView AllowsColumnReorder="True">
-                            <!-- Checkbox -->
                             <GridViewColumn Header="" Width="30">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
@@ -136,8 +147,6 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-
-                            <!-- Tytuł -->
                             <GridViewColumn Header="Tytuł" Width="200">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
@@ -145,8 +154,6 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-
-                            <!-- Podgląd -->
                             <GridViewColumn Header="Podgląd" Width="300">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
@@ -154,8 +161,6 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-
-                            <!-- Utworzono -->
                             <GridViewColumn Header="Utworzono" Width="130">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
@@ -163,8 +168,6 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-
-                            <!-- Zmodyfikowano -->
                             <GridViewColumn Header="Zmodyfikowano" Width="140">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>

@@ -32,6 +32,10 @@ namespace Notatnik.ViewModels
         public ICommand SearchCommand { get; }
         public ICommand PrintCommand { get; }
 
+        /* === NOWA KOMENDA === */
+        public ICommand MoveNoteCommand { get; }
+        /* ==================== */
+
         private Folder _selectedFolder;
         public Folder SelectedFolder
         {
@@ -67,7 +71,6 @@ namespace Notatnik.ViewModels
 
             var folderList = _db.Folders.Include(f => f.Subfolders).ToList();
             Folders = new ObservableCollection<Folder>(folderList);
-
             Notes = new ObservableCollection<Note>();
 
             AddNoteCommand = new RelayCommand(_ => AddNote(), _ => SelectedFolder != null);
@@ -83,9 +86,38 @@ namespace Notatnik.ViewModels
             SearchCommand = new RelayCommand(_ => OpenSearchWindow());
             PrintCommand = new RelayCommand(_ => Print());
 
+            /* --- Inicjalizacja nowej komendy --- */
+            MoveNoteCommand = new RelayCommand(p => MoveNote(p as Note), p => p is Note);
+            /* ----------------------------------- */
+
             if (Folders.Any())
                 SelectedFolder = Folders.First();
         }
+
+        /* ===== LOGIKA PRZENOSZENIA NOTATKI ===== */
+        private void MoveNote(Note noteToMove)
+        {
+            if (noteToMove == null) return;
+
+            var dlg = new MoveNoteWindow(_db, noteToMove.FolderId)
+            {
+                Owner = Application.Current.MainWindow
+            };
+
+            if (dlg.ShowDialog() != true) return;
+
+            var targetFolder = dlg.SelectedFolder;
+            if (targetFolder == null || targetFolder.Id == noteToMove.FolderId) return;
+
+            noteToMove.FolderId = targetFolder.Id;
+            noteToMove.ModifiedAt = DateTime.Now;
+
+            _db.SaveChanges();
+            LoadNotes();
+        }
+        /* ======================================= */
+
+        /* --------- POZOSTAŁE NIEZMIENIONE METODY --------- */
 
         private void LoadNotes()
         {
@@ -220,7 +252,6 @@ namespace Notatnik.ViewModels
 
             _db.Notes.Remove(note);
             _db.SaveChanges();
-
             Notes.Remove(note);
         }
 
@@ -287,39 +318,30 @@ namespace Notatnik.ViewModels
         {
             var notesInFolder = _db.Notes.Where(n => n.FolderId == folder.Id).ToList();
             foreach (var n in notesInFolder)
-            {
                 _db.Notes.Remove(n);
-            }
 
             var subfolders = _db.Folders.Where(f => f.ParentFolderId == folder.Id).ToList();
             foreach (var sub in subfolders)
-            {
                 DeleteFolderRecursive(sub);
-            }
 
             _db.Folders.Remove(folder);
         }
 
         private void OpenSearchWindow()
         {
-            // Otwiera niemodalne okno wyszukiwania, przekazując DbContext i instancję MainViewModel
-            var searchWin = new SearchWindow(_db, this);
-            searchWin.Owner = Application.Current.MainWindow;
+            var searchWin = new SearchWindow(_db, this)
+            {
+                Owner = Application.Current.MainWindow
+            };
             searchWin.Show();
         }
 
-        /// <summary>
-        /// Metoda wywoływana przez SearchViewModel po dwukliku w wynikach,
-        /// aby otworzyć wybraną notatkę w edycji.
-        /// </summary>
         public void OpenNoteForEdit(Note noteToEdit)
         {
             if (noteToEdit == null) return;
 
-            // Ustawienie wybranej notatki w głównej liście (podświetlenie)
             SingleSelectedNote = Notes.FirstOrDefault(n => n.Id == noteToEdit.Id);
 
-            // Uruchamiamy okno edycji notatki
             var vm = new NoteDetailsViewModel(noteToEdit, _db);
             var win = new NoteDetailsWindow(vm);
             if (win.ShowDialog() == true)
@@ -334,7 +356,8 @@ namespace Notatnik.ViewModels
         {
             if (SingleSelectedNote == null)
             {
-                MessageBox.Show("Wybierz notatkę do wydrukowania.", "Drukowanie", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Wybierz notatkę do wydrukowania.", "Drukowanie",
+                                MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -345,7 +368,8 @@ namespace Notatnik.ViewModels
                     new System.Windows.Documents.Paragraph(
                         new System.Windows.Documents.Run(SingleSelectedNote.Content)));
                 doc.Name = "NotePrintDocument";
-                printDialog.PrintDocument(((System.Windows.Documents.IDocumentPaginatorSource)doc).DocumentPaginator, "Drukowanie notatki");
+                printDialog.PrintDocument(((System.Windows.Documents.IDocumentPaginatorSource)doc)
+                                          .DocumentPaginator, "Drukowanie notatki");
             }
         }
 
@@ -366,6 +390,7 @@ namespace Notatnik.ViewModels
             }
         }
 
+        /* -------------- INotifyPropertyChanged -------------- */
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string name) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
