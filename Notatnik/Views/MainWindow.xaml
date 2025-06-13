@@ -14,11 +14,15 @@
         <!-- Menu główne -->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_Plik">
-                <MenuItem Header="Nowa...">
-                    <MenuItem Header="Notatka tekstowa" Command="{Binding AddTextNoteCommand}" />
-                    <MenuItem Header="Notatka lista zadań" Command="{Binding AddCheckboxNoteCommand}" />
-                    <MenuItem Header="Notatka formatowana" Command="{Binding AddLongNoteCommand}" />
+                <MenuItem Header="Nowy...">
+                    <MenuItem Header="Notatka tekstowa" Icon="📝" Command="{Binding AddTextNoteCommand}" />
+                    <MenuItem Header="Notatka lista zadań" Icon="☑️" Command="{Binding AddCheckboxNoteCommand}" />
+                    <MenuItem Header="Notatka formatowana" Icon="📄" Command="{Binding AddLongNoteCommand}" />
+                    <Separator/>
+                    <MenuItem Header="Folder" Icon="📁" Command="{Binding AddFolderCommand}" />
                 </MenuItem>
+                <Separator/>
+                <MenuItem Header="Drukuj..." Icon="🖨" Command="{Binding PrintCommand}" />
                 <Separator/>
                 <MenuItem Header="Zamknij" Command="{Binding ExitCommand}" />
             </MenuItem>
@@ -38,6 +42,8 @@
                 <Separator/>
                 <Button Content="🔍" ToolTip="Wyszukiwanie" Command="{Binding SearchCommand}" />
                 <Button Content="🖨" ToolTip="Drukuj" Command="{Binding PrintCommand}" />
+                <Separator/>
+                <Button Content="🗑️" ToolTip="Usuń zaznaczone" Command="{Binding DeleteMarkedNotesCommand}" />
             </ToolBar>
         </ToolBarTray>
 
@@ -102,6 +108,19 @@
                 SelectionMode="Single"
                 HorizontalAlignment="Stretch"
                 MouseDoubleClick="ListViewNotes_MouseDoubleClick">
+                    <ListView.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Edytuj" Command="{Binding EditNoteCommand}" 
+                      CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
+                            <MenuItem Header="Usuń" Command="{Binding DeleteNoteCommand}" 
+                      CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
+                            <MenuItem Header="Usuń zaznaczone" Command="{Binding DeleteMarkedNotesCommand}" 
+                      CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
+                            <Separator/>
+                            <MenuItem Header="Właściwości" Command="{Binding NotePropertiesCommand}" 
+                      CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
+                        </ContextMenu>
+                    </ListView.ContextMenu>
                     <ListView.View>
                         <GridView AllowsColumnReorder="True">
                             <!-- Checkbox -->
@@ -151,8 +170,6 @@
                         </GridView>
                     </ListView.View>
                 </ListView>
-
-
             </Grid>
         </Grid>
     </DockPanel>

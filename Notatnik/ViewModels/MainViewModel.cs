@@ -23,6 +23,7 @@ namespace Notatnik.ViewModels
         public ICommand EditNoteCommand { get; }
         public ICommand DeleteMarkedNotesCommand { get; }
         public ICommand AddFolderCommand { get; }
+        public ICommand DeleteNoteCommand { get; }
         public ICommand DeleteMarkedFoldersCommand { get; }
         public ICommand EditFolderCommand { get; }
         public ICommand AddTextNoteCommand { get; }
@@ -73,6 +74,7 @@ namespace Notatnik.ViewModels
             EditNoteCommand = new RelayCommand(_ => EditNote(), _ => SingleSelectedNote != null);
             DeleteMarkedNotesCommand = new RelayCommand(_ => DeleteMarkedNotes(), _ => Notes.Any(n => n.IsMarkedForDeletion));
             AddFolderCommand = new RelayCommand(_ => AddFolder());
+            DeleteNoteCommand = new RelayCommand(_ => DeleteNote(SingleSelectedNote), _ => SingleSelectedNote != null);
             DeleteMarkedFoldersCommand = new RelayCommand(_ => DeleteMarkedFolders(), _ => Folders.Any(f => f.IsMarkedForDeletion));
             EditFolderCommand = new RelayCommand(_ => EditFolder(), _ => SelectedFolder != null);
             AddTextNoteCommand = new RelayCommand(_ => AddTextNote(), _ => SelectedFolder != null);
@@ -202,6 +204,24 @@ namespace Notatnik.ViewModels
                 _db.SaveChanges();
                 LoadNotes();
             }
+        }
+
+        private void DeleteNote(Note note)
+        {
+            if (note == null) return;
+
+            var result = MessageBox.Show(
+                $"Czy na pewno chcesz usunąć notatkę \"{note.Title}\"?",
+                "Potwierdź usunięcie",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result != MessageBoxResult.Yes) return;
+
+            _db.Notes.Remove(note);
+            _db.SaveChanges();
+
+            Notes.Remove(note);
         }
 
         private void DeleteMarkedNotes()
