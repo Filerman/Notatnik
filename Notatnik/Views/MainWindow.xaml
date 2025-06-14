@@ -9,14 +9,13 @@
         FontFamily="Segoe UI"
         FontSize="12">
 
-    <!-- View-model -->
     <Window.DataContext>
         <vm:MainViewModel/>
     </Window.DataContext>
 
     <DockPanel>
 
-        <!-- ═════ MENU GŁÓWNE ═════ -->
+        <!-- Menu -->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_Plik">
                 <MenuItem Header="Nowy...">
@@ -45,7 +44,7 @@
             </MenuItem>
         </Menu>
 
-        <!-- ═════ PASEK NARZĘDZI ═════ -->
+        <!-- Pasek narzędzi -->
         <ToolBarTray DockPanel.Dock="Top">
             <ToolBar>
                 <Button Content="📝" ToolTip="Nowa notatka tekstowa"   Command="{Binding AddTextNoteCommand}" />
@@ -61,7 +60,6 @@
             </ToolBar>
         </ToolBarTray>
 
-        <!-- ═════ GŁÓWNA SIATKA ═════ -->
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -111,10 +109,9 @@
                 </ListView>
             </Grid>
 
-            <!-- PIONOWY SEPARATOR -->
             <Border Grid.Column="1" Background="LightGray" Width="1"/>
 
-            <!-- ███ PANEL  NOTATKI ███ -->
+            <!-- Notatki -->
             <Grid Grid.Column="2" Margin="5">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -166,7 +163,6 @@
                         </ContextMenu>
                     </ListView.ContextMenu>
 
-                    <!-- ▶ WIDOK KOLUMN -->
                     <ListView.View>
                         <GridView AllowsColumnReorder="True">
 
@@ -209,7 +205,6 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-
                         </GridView>
                     </ListView.View>
                 </ListView>
