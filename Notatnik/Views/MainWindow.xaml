@@ -194,13 +194,19 @@
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
 
-                            <GridViewColumn Header="Podgląd" Width="300">
+                            <GridViewColumn Width="300">
+                                <GridViewColumn.Header>
+                                    <GridViewColumnHeader Content="Podgląd"
+                              Command="{Binding SetSortCommand}"
+                              CommandParameter="Snippet"/>
+                                </GridViewColumn.Header>
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Snippet}" TextWrapping="NoWrap"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
+
 
                             <GridViewColumn Width="130">
                                 <GridViewColumn.Header>
