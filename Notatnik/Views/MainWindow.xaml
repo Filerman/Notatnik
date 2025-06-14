@@ -31,10 +31,6 @@
                 <MenuItem Header="Zamknij" Command="{Binding ExitCommand}" />
             </MenuItem>
 
-            <MenuItem Header="_Edycja">
-                <MenuItem Header="Zarządzaj folderami" Command="{Binding ManageFoldersCommand}" />
-            </MenuItem>
-
             <MenuItem Header="|" IsEnabled="False" Focusable="False"/>
 
             <MenuItem Header="_Statystyki">
