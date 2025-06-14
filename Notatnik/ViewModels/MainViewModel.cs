@@ -256,7 +256,6 @@ namespace Notatnik.ViewModels
             if (targetFolder == null || targetFolder.Id == noteToMove.FolderId) return;
 
             noteToMove.FolderId = targetFolder.Id;
-            noteToMove.ModifiedAt = DateTime.Now;
 
             _db.SaveChanges();
             LoadNotes();
