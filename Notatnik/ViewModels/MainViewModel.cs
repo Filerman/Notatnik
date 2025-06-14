@@ -109,6 +109,20 @@ namespace Notatnik.ViewModels
                 SelectedFolder = Folders.First();
         }
 
+        private bool IsTitleUnique(string title, int folderId, int? currentNoteId = null)
+        {
+            var normalized = title.Trim().ToLowerInvariant();
+
+            var otherTitles = _db.Notes
+                                 .Where(n => n.FolderId == folderId &&
+                                             n.Id != (currentNoteId ?? 0))
+                                 .Select(n => n.Title)
+                                 .AsEnumerable()   
+                                 .Select(t => t.Trim().ToLowerInvariant());
+
+            return !otherTitles.Contains(normalized);
+        }
+
         private void ApplySort(string field)
         {
             if (string.IsNullOrWhiteSpace(field)) return;
@@ -172,10 +186,17 @@ namespace Notatnik.ViewModels
             var win = new NoteDetailsWindow(vm);
             if (win.ShowDialog() == true)
             {
+                if (!IsTitleUnique(note.Title, note.FolderId))
+                {
+                    MessageBox.Show($"W folderze istnieje już notatka o tytule „{note.Title}”.",
+                                    "Duplikat tytułu", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;  
+                }
                 _db.Notes.Add(note);
                 _db.SaveChanges();
                 LoadNotes();
             }
+
         }
         private void AddCheckboxNote()
         {
@@ -192,6 +213,12 @@ namespace Notatnik.ViewModels
             var win = new NoteDetailsWindow(vm);
             if (win.ShowDialog() == true)
             {
+                if (!IsTitleUnique(note.Title, note.FolderId))
+                {
+                    MessageBox.Show($"W folderze istnieje już notatka o tytule „{note.Title}”.",
+                                    "Duplikat tytułu", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
                 _db.Notes.Add(note);
                 _db.SaveChanges();
                 LoadNotes();
@@ -212,6 +239,12 @@ namespace Notatnik.ViewModels
             var win = new NoteDetailsWindow(vm);
             if (win.ShowDialog() == true)
             {
+                if (!IsTitleUnique(note.Title, note.FolderId))
+                {
+                    MessageBox.Show($"W folderze istnieje już notatka o tytule „{note.Title}”.",
+                                    "Duplikat tytułu", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
                 _db.Notes.Add(note);
                 _db.SaveChanges();
                 LoadNotes();
@@ -228,6 +261,12 @@ namespace Notatnik.ViewModels
             if (win.ShowDialog() == true)
             {
                 noteToEdit.ModifiedAt = DateTime.Now;
+                if (!IsTitleUnique(noteToEdit.Title, noteToEdit.FolderId, noteToEdit.Id))
+                {
+                    MessageBox.Show($"W tym folderze jest już notatka o tytule „{noteToEdit.Title}”.",
+                                    "Duplikat tytułu", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;                    // nie zapisuj zmian
+                }
                 _db.SaveChanges();
                 LoadNotes();
             }
@@ -243,6 +282,12 @@ namespace Notatnik.ViewModels
             if (win.ShowDialog() == true)
             {
                 noteToEdit.ModifiedAt = DateTime.Now;
+                if (!IsTitleUnique(noteToEdit.Title, noteToEdit.FolderId, noteToEdit.Id))
+                {
+                    MessageBox.Show($"W tym folderze jest już notatka o tytule „{noteToEdit.Title}”.",
+                                    "Duplikat tytułu", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;                    // nie zapisuj zmian
+                }
                 _db.SaveChanges();
                 LoadNotes();
             }
