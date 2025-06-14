@@ -344,7 +344,7 @@ namespace Notatnik.ViewModels
             if (!markedFolders.Any()) return;
 
             var wynik = MessageBox.Show(
-                $"Czy na pewno chcesz usunąć {markedFolders.Count} zaznaczony{(markedFolders.Count == 1 ? "y" : "e")} folder(y) wraz z całą zawartością?",
+                $"Czy na pewno chcesz usunąć {markedFolders.Count} zaznaczon{(markedFolders.Count == 1 ? "y" : "e")} folder(y) wraz z całą zawartością?",
                 "Potwierdź usunięcie",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning);
@@ -385,7 +385,7 @@ namespace Notatnik.ViewModels
             if (!markedFolders.Any()) return;
 
             var wynik = MessageBox.Show(
-                $"Czy na pewno chcesz usunąć {markedNotes.Count} zaznaczon{(markedNotes.Count == 1 ? "ą" : "e")} notatkę(i) i {markedFolders.Count} zaznaczony{(markedFolders.Count == 1 ? "y" : "e")} folder(y) wraz z całą zawartością?",
+                $"Czy na pewno chcesz usunąć {markedNotes.Count} zaznaczon{(markedNotes.Count == 1 ? "ą" : "e")} notatkę(i) i {markedFolders.Count} zaznaczon{(markedFolders.Count == 1 ? "y" : "e")} folder(y) wraz z całą zawartością?",
                 "Potwierdź usunięcie",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning);
