@@ -378,10 +378,9 @@ namespace Notatnik.ViewModels
         private void DeleteMarkedItems()
         {
             var markedNotes = Notes.Where(n => n.IsMarkedForDeletion).ToList();
-            if (!markedNotes.Any()) return;
-
             var markedFolders = Folders.Where(f => f.IsMarkedForDeletion).ToList();
-            if (!markedFolders.Any()) return;
+
+            if (!markedNotes.Any() && !markedFolders.Any()) return;
 
             var wynik = MessageBox.Show(
                 $"Czy na pewno chcesz usunąć {markedNotes.Count} zaznaczon{(markedNotes.Count == 1 ? "ą" : "e")} notatkę(i) i {markedFolders.Count} zaznaczon{(markedFolders.Count == 1 ? "y" : "e")} folder(y) wraz z całą zawartością?",
