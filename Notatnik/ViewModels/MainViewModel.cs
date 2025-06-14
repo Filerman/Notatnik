@@ -118,17 +118,24 @@ namespace Notatnik.ViewModels
             else
             {
                 _sortField = field;
-                _ascending = true; 
+                _ascending = true;
             }
 
             NotesView.SortDescriptions.Clear();
+
             NotesView.SortDescriptions.Add(
                 new SortDescription(_sortField,
                     _ascending ? ListSortDirection.Ascending
                                : ListSortDirection.Descending));
 
+            NotesView.SortDescriptions.Add(
+                new SortDescription(nameof(Note.Id),
+                    _ascending ? ListSortDirection.Ascending
+                               : ListSortDirection.Descending));
+
             NotesView.Refresh();
         }
+
         private void LoadNotes()
         {
             Notes.Clear();
@@ -137,6 +144,7 @@ namespace Notatnik.ViewModels
             var notesInFolder = _db.Notes
                                    .Where(n => n.FolderId == SelectedFolder.Id)
                                    .Include(n => n.ChecklistItems)
+                                   .Include(n => n.Tags)
                                    .ToList();
 
             foreach (var note in notesInFolder)
