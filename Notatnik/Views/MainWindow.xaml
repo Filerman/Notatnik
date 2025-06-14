@@ -44,7 +44,7 @@
         <ToolBarTray DockPanel.Dock="Top">
             <ToolBar>
                 <Button Content="📝" ToolTip="Nowa notatka tekstowa"   Command="{Binding AddTextNoteCommand}" />
-                <Button Content="☑️" ToolTip="Nowa notatka checklist" Command="{Binding AddCheckboxNoteCommand}" />
+                <Button Content="☑️" ToolTip="Nowa notatka checklist"  Command="{Binding AddCheckboxNoteCommand}" />
                 <Button Content="📄" ToolTip="Nowa długa notatka"      Command="{Binding AddLongNoteCommand}" />
                 <Separator/>
                 <Button Content="📁" ToolTip="Nowy folder"             Command="{Binding AddFolderCommand}" />
@@ -52,7 +52,8 @@
                 <Button Content="🔍" ToolTip="Wyszukiwanie"            Command="{Binding SearchCommand}" />
                 <Button Content="🖨" ToolTip="Drukuj"                  Command="{Binding PrintCommand}" />
                 <Separator/>
-                <Button Content="🗑️" ToolTip="Usuń zaznaczone"        Command="{Binding DeleteMarkedItemsCommand}" />
+                <Button Content="🗂" ToolTip="Zmień folder"            Command="{Binding MoveNoteCommand}" />
+                <Button Content="🗑️" ToolTip="Usuń zaznaczone"         Command="{Binding DeleteMarkedItemsCommand}" />
             </ToolBar>
         </ToolBarTray>
 
