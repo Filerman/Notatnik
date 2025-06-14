@@ -7,25 +7,86 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize">
 
+    <!-- ░░░ STYLE – klikalny cały wiersz ░░░ -->
+    <Window.Resources>
+        <Style x:Key="FlatTreeItem" TargetType="{x:Type TreeViewItem}">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin"  Value="-19,0,0,0"/>
+
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type TreeViewItem}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- systemowa strzałka -->
+                            <ToggleButton x:Name="Expander"
+                                          Grid.Column="0"
+                                          Width="16" Height="16"
+                                          IsChecked="{Binding IsExpanded,
+                                                             RelativeSource={RelativeSource TemplatedParent}}"
+                                          ClickMode="Press"
+                                          Focusable="False"/>
+
+                            <!-- pełnoszerokie podświetlenie -->
+                            <Border x:Name="Bd" Grid.Column="1"
+                                    Background="Transparent"
+                                    Padding="6,2,2,2">
+                                <ContentPresenter ContentSource="Header"/>
+                            </Border>
+                        </Grid>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background"
+                                        Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                                <Setter Property="Foreground"
+                                        Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <!-- ░░░ UKŁAD ░░░ -->
     <Grid Margin="20">
+        <!-- Auto: etykieta,  *: drzewo,  Auto: przyciski -->
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="10"/>
+            <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Drzewo folderów -->
-        <TreeView ItemsSource="{Binding RootFolders}"
-                  SelectedItemChanged="TreeView_SelectedItemChanged">
-            <TreeView.Resources>
-                <HierarchicalDataTemplate DataType="{x:Type models:Folder}"
-                                          ItemsSource="{Binding Subfolders}">
-                    <TextBlock Text="{Binding Name}"/>
-                </HierarchicalDataTemplate>
-            </TreeView.Resources>
-        </TreeView>
+        <TextBlock Text="Wybierz folder docelowy:"
+                   FontWeight="Bold"
+                   Margin="0,0,0,8"/>
 
-        <!-- Przyciski OK / Anuluj -->
+        <!-- Drzewo folderów w wierszu 1 (*) -->
+        <Border Grid.Row="1"
+                BorderBrush="LightGray"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="2">
+            <TreeView ItemsSource="{Binding RootFolders}"
+                      SelectedItemChanged="TreeView_SelectedItemChanged"
+                      ItemContainerStyle="{StaticResource FlatTreeItem}"
+                      Padding="0">
+                <TreeView.Resources>
+                    <HierarchicalDataTemplate DataType="{x:Type models:Folder}"
+                                              ItemsSource="{Binding Subfolders}">
+                        <TextBlock Text="{Binding Name}"/>
+                    </HierarchicalDataTemplate>
+                </TreeView.Resources>
+            </TreeView>
+        </Border>
+
+        <!-- Przyciski -->
         <StackPanel Grid.Row="2"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right">
