@@ -52,6 +52,7 @@
                 <Button Content="🔍" ToolTip="Wyszukiwanie"            Command="{Binding SearchCommand}" />
                 <Button Content="🖨" ToolTip="Drukuj"                  Command="{Binding PrintCommand}" />
                 <Separator/>
+                <Button Content="⧉" ToolTip="Kopiuj notatkę"           Command="{Binding CopyNoteCommand}" />
                 <Button Content="🗂" ToolTip="Zmień folder"            Command="{Binding MoveNoteCommand}" />
                 <Button Content="🗑️" ToolTip="Usuń zaznaczone"         Command="{Binding DeleteMarkedItemsCommand}" />
             </ToolBar>
