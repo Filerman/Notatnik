@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 using Microsoft.EntityFrameworkCore;
 using Notatnik.Commands;
@@ -12,6 +13,15 @@ namespace Notatnik.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged
     {
+        // Sortowanie
+        private string _sortField = "Title";
+        private bool _ascending = true;
+        public ICommand SetSortCommand { get; }
+
+
+        public ICollectionView NotesView { get; }          
+
+
         private readonly AppDbContext _db;
         public ObservableCollection<Folder> Folders { get; }
         public ObservableCollection<Note> Notes { get; }
@@ -70,7 +80,9 @@ namespace Notatnik.ViewModels
                 _db.Folders.Include(f => f.Subfolders).ToList());
 
             Notes = new ObservableCollection<Note>();
+            NotesView = CollectionViewSource.GetDefaultView(Notes);
 
+            SetSortCommand = new RelayCommand(p => ApplySort(p as string));
             AddTextNoteCommand = new RelayCommand(_ => AddTextNote(), _ => SelectedFolder != null);
             AddCheckboxNoteCommand = new RelayCommand(_ => AddCheckboxNote(), _ => SelectedFolder != null);
             AddLongNoteCommand = new RelayCommand(_ => AddLongNote(), _ => SelectedFolder != null);
@@ -96,6 +108,27 @@ namespace Notatnik.ViewModels
             if (Folders.Any())
                 SelectedFolder = Folders.First();
         }
+
+        private void ApplySort(string field)
+        {
+            if (string.IsNullOrWhiteSpace(field)) return;
+
+            if (_sortField == field)
+                _ascending = !_ascending;
+            else
+            {
+                _sortField = field;
+                _ascending = true; 
+            }
+
+            NotesView.SortDescriptions.Clear();
+            NotesView.SortDescriptions.Add(
+                new SortDescription(_sortField,
+                    _ascending ? ListSortDirection.Ascending
+                               : ListSortDirection.Descending));
+
+            NotesView.Refresh();
+        }
         private void LoadNotes()
         {
             Notes.Clear();
@@ -111,6 +144,9 @@ namespace Notatnik.ViewModels
                 note.IsMarkedForDeletion = false;
                 Notes.Add(note);
             }
+
+            // natychmiast sortuj wg bieżących ustawień
+            ApplySort(_sortField);
         }
 
         private void AddTextNote()
