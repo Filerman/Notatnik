@@ -111,7 +111,7 @@
 
                             <GridViewColumn Header="Nazwa folderu"
                           DisplayMemberBinding="{Binding Name}"
-                          Width="200"/>
+                          Width="155"/>
                         </GridView>
                     </ListView.View>
                 </ListView>
