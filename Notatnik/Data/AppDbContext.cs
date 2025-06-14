@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Notatnik.Models;
+using System.Linq;
 
 namespace Notatnik.Data
 {
@@ -11,12 +12,18 @@ namespace Notatnik.Data
         public DbSet<ChecklistItem> ChecklistItems { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options)
-            : base(options)
+                : base(options)
         {
-            // Tworzymy bazę, jeśli nie istnieje.
-            // Ustawiamy EnsureCreated zamiast Migrate, bo w tym momencie
-            // nie masz jeszcze wygenerowanych migracji EF Core.
             Database.EnsureCreated();
+
+            if (!Folders.Any()) 
+            {
+                Folders.Add(new Folder
+                {
+                    Name = "Notatki"
+                });
+                SaveChanges();
+            }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
