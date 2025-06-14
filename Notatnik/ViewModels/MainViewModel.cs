@@ -29,6 +29,7 @@ namespace Notatnik.ViewModels
         public ICommand SearchCommand { get; }
         public ICommand PrintCommand { get; }
         public ICommand MoveNoteCommand { get; }
+        public ICommand CopyNoteCommand { get; }
         public ICommand DeleteFolderCommand { get; }
 
         private Note _singleSelectedNote;
@@ -79,6 +80,7 @@ namespace Notatnik.ViewModels
             DeleteMarkedNotesCommand = new RelayCommand(_ => DeleteMarkedNotes(), _ => Notes.Any(n => n.IsMarkedForDeletion));
 
             MoveNoteCommand = new RelayCommand(p => MoveNote(p as Note), p => p is Note);
+            CopyNoteCommand = new RelayCommand(p => CopyNote(p as Note), p => p is Note);
 
             AddFolderCommand = new RelayCommand(_ => AddFolder());
             EditFolderCommand = new RelayCommand(_ => EditFolder(), _ => SelectedFolder != null);
@@ -255,6 +257,40 @@ namespace Notatnik.ViewModels
 
             _db.SaveChanges();
             LoadNotes();
+        }
+
+        private void CopyNote(Note source)
+        {
+            if (source == null) return;
+
+            var dlg = new MoveNoteWindow(_db, source.FolderId)
+            {
+                Owner = Application.Current.MainWindow,
+                Title = "Skopiuj notatkę do folderu"
+            };
+
+            if (dlg.ShowDialog() != true) return;
+            var target = dlg.SelectedFolder;
+            if (target == null) return;
+
+            var copy = new Note
+            {
+                Title = $"{source.Title} - kopia",
+                Content = source.Content,
+                Type = source.Type,
+                CreatedAt = DateTime.Now,
+                ModifiedAt = DateTime.Now,
+                FolderId = target.Id,
+                Tags = source.Tags.ToList()
+            };
+
+            foreach (var item in source.ChecklistItems)
+                copy.ChecklistItems.Add(new ChecklistItem { Text = item.Text, IsChecked = item.IsChecked });
+
+            _db.Notes.Add(copy);
+            _db.SaveChanges();
+
+            if (target.Id == SelectedFolder?.Id) LoadNotes();
         }
 
         private void AddFolder()
