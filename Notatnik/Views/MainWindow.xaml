@@ -56,7 +56,7 @@
                 <Button Content="🔍" ToolTip="Wyszukiwanie"            Command="{Binding SearchCommand}" />
                 <Button Content="🖨" ToolTip="Drukuj"                  Command="{Binding PrintCommand}" />
                 <Separator/>
-                <Button Content="🗑️" ToolTip="Usuń zaznaczone"        Command="{Binding DeleteMarkedNotesCommand}" />
+                <Button Content="🗑️" ToolTip="Usuń zaznaczone"        Command="{Binding DeleteMarkedItemsCommand}" />
             </ToolBar>
         </ToolBarTray>
 

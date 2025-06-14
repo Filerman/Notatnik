@@ -31,6 +31,7 @@ namespace Notatnik.ViewModels
         public ICommand MoveNoteCommand { get; }
         public ICommand CopyNoteCommand { get; }
         public ICommand DeleteFolderCommand { get; }
+        public ICommand DeleteMarkedItemsCommand { get; }
 
         private Note _singleSelectedNote;
         public Note SingleSelectedNote
@@ -86,6 +87,8 @@ namespace Notatnik.ViewModels
             EditFolderCommand = new RelayCommand(_ => EditFolder(), _ => SelectedFolder != null);
             DeleteFolderCommand = new RelayCommand(_ => DeleteFolder(SelectedFolder), _ => SelectedFolder != null);
             DeleteMarkedFoldersCommand = new RelayCommand(_ => DeleteMarkedFolders(), _ => Folders.Any(f => f.IsMarkedForDeletion));
+
+            DeleteMarkedItemsCommand = new RelayCommand(_ => DeleteMarkedItems(), _ => Notes.Any(n => n.IsMarkedForDeletion) || Folders.Any(f => f.IsMarkedForDeletion));
 
             SearchCommand = new RelayCommand(_ => OpenSearchWindow());
             PrintCommand = new RelayCommand(_ => Print());
@@ -223,7 +226,7 @@ namespace Notatnik.ViewModels
             if (!markedNotes.Any()) return;
 
             var wynik = MessageBox.Show(
-                $"Czy na pewno chcesz usunąć {markedNotes.Count} zaznaczoną{(markedNotes.Count == 1 ? "ą" : "e")} notatkę(i)?",
+                $"Czy na pewno chcesz usunąć {markedNotes.Count} zaznaczon{(markedNotes.Count == 1 ? "ą" : "e")} notatkę(i)?",
                 "Potwierdź usunięcie",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
@@ -258,7 +261,6 @@ namespace Notatnik.ViewModels
             _db.SaveChanges();
             LoadNotes();
         }
-
         private void CopyNote(Note source)
         {
             if (source == null) return;
@@ -371,6 +373,40 @@ namespace Notatnik.ViewModels
                 DeleteFolderRecursive(sub);
 
             _db.Folders.Remove(folder);
+        }
+
+        private void DeleteMarkedItems()
+        {
+            var markedNotes = Notes.Where(n => n.IsMarkedForDeletion).ToList();
+            if (!markedNotes.Any()) return;
+
+            var markedFolders = Folders.Where(f => f.IsMarkedForDeletion).ToList();
+            if (!markedFolders.Any()) return;
+
+            var wynik = MessageBox.Show(
+                $"Czy na pewno chcesz usunąć {markedNotes.Count} zaznaczon{(markedNotes.Count == 1 ? "ą" : "e")} notatkę(i) i {markedFolders.Count} zaznaczony{(markedFolders.Count == 1 ? "y" : "e")} folder(y) wraz z całą zawartością?",
+                "Potwierdź usunięcie",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (wynik != MessageBoxResult.Yes) return;
+
+            foreach (var note in markedNotes)
+            {
+                _db.Notes.Remove(note);
+                Notes.Remove(note);
+            }
+
+            foreach (var folder in markedFolders)
+            {
+                DeleteFolderRecursive(folder);
+                Folders.Remove(folder);
+            }
+
+            _db.SaveChanges();
+
+            if (!Folders.Contains(SelectedFolder))
+                SelectedFolder = Folders.FirstOrDefault();
         }
 
         private void OpenSearchWindow()
