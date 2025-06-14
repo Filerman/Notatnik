@@ -15,8 +15,6 @@ namespace Notatnik.ViewModels
     {
         private readonly AppDbContext _db;
         public Note Note { get; }
-
-        // Kolekcje bindowane we widoku:
         public ObservableCollection<ChecklistItem> ChecklistItems { get; }
         public ObservableCollection<string> Tags { get; } = new ObservableCollection<string>();
         public ObservableCollection<string> AvailableTags { get; } = new ObservableCollection<string>();
