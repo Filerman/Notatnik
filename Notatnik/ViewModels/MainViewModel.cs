@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using Microsoft.EntityFrameworkCore;
@@ -80,6 +78,8 @@ namespace Notatnik.ViewModels
             DeleteNoteCommand = new RelayCommand(_ => DeleteNote(SingleSelectedNote), _ => SingleSelectedNote != null);
             DeleteMarkedNotesCommand = new RelayCommand(_ => DeleteMarkedNotes(), _ => Notes.Any(n => n.IsMarkedForDeletion));
 
+            MoveNoteCommand = new RelayCommand(p => MoveNote(p as Note), p => p is Note);
+
             AddFolderCommand = new RelayCommand(_ => AddFolder());
             EditFolderCommand = new RelayCommand(_ => EditFolder(), _ => SelectedFolder != null);
             DeleteFolderCommand = new RelayCommand(_ => DeleteFolder(SelectedFolder), _ => SelectedFolder != null);
@@ -88,51 +88,9 @@ namespace Notatnik.ViewModels
             SearchCommand = new RelayCommand(_ => OpenSearchWindow());
             PrintCommand = new RelayCommand(_ => Print());
 
-            MoveNoteCommand = new RelayCommand(p => MoveNote(p as Note), p => p is Note);
-
             if (Folders.Any())
                 SelectedFolder = Folders.First();
         }
-
-        private void DeleteFolder(Folder folder)
-        {
-            if (folder == null) return;
-
-            var ask = MessageBox.Show($"Czy na pewno usunąć „{folder.Name}”? Usunięte zostaną również notatki zawarte w tym folderze.",
-                                      "Potwierdź usunięcie",
-                                      MessageBoxButton.YesNo,
-                                      MessageBoxImage.Warning);
-
-            if (ask != MessageBoxResult.Yes) return;
-
-            _db.Folders.Remove(folder);
-            _db.SaveChanges();
-            Folders.Remove(folder);
-        }
-        private void MoveNote(Note noteToMove)
-        {
-            if (noteToMove == null) return;
-
-            var dlg = new MoveNoteWindow(_db, noteToMove.FolderId)
-            {
-                Owner = Application.Current.MainWindow
-            };
-
-            if (dlg.ShowDialog() != true) return;
-
-            var targetFolder = dlg.SelectedFolder;
-            if (targetFolder == null || targetFolder.Id == noteToMove.FolderId) return;
-
-            noteToMove.FolderId = targetFolder.Id;
-            noteToMove.ModifiedAt = DateTime.Now;
-
-            _db.SaveChanges();
-            LoadNotes();
-        }
-        /* ======================================= */
-
-        /* --------- POZOSTAŁE NIEZMIENIONE METODY --------- */
-
         private void LoadNotes()
         {
             Notes.Clear();
@@ -147,30 +105,6 @@ namespace Notatnik.ViewModels
             {
                 note.IsMarkedForDeletion = false;
                 Notes.Add(note);
-            }
-        }
-
-        private void AddNote()
-        {
-            var typeDlg = new SelectNoteTypeWindow();
-            if (typeDlg.ShowDialog() != true) return;
-
-            var note = new Note
-            {
-                CreatedAt = DateTime.Now,
-                ModifiedAt = DateTime.Now,
-                FolderId = SelectedFolder.Id,
-                Type = typeDlg.SelectedType,
-                Content = string.Empty
-            };
-
-            var vm = new NoteDetailsViewModel(note, _db);
-            var win = new NoteDetailsWindow(vm);
-            if (win.ShowDialog() == true)
-            {
-                _db.Notes.Add(note);
-                _db.SaveChanges();
-                LoadNotes();
             }
         }
 
@@ -194,7 +128,6 @@ namespace Notatnik.ViewModels
                 LoadNotes();
             }
         }
-
         private void AddCheckboxNote()
         {
             var note = new Note
@@ -215,7 +148,6 @@ namespace Notatnik.ViewModels
                 LoadNotes();
             }
         }
-
         private void AddLongNote()
         {
             var note = new Note
@@ -251,6 +183,21 @@ namespace Notatnik.ViewModels
                 LoadNotes();
             }
         }
+        public void OpenNoteForEdit(Note noteToEdit)
+        {
+            if (noteToEdit == null) return;
+
+            SingleSelectedNote = Notes.FirstOrDefault(n => n.Id == noteToEdit.Id);
+
+            var vm = new NoteDetailsViewModel(noteToEdit, _db);
+            var win = new NoteDetailsWindow(vm);
+            if (win.ShowDialog() == true)
+            {
+                noteToEdit.ModifiedAt = DateTime.Now;
+                _db.SaveChanges();
+                LoadNotes();
+            }
+        }
 
         private void DeleteNote(Note note)
         {
@@ -268,7 +215,6 @@ namespace Notatnik.ViewModels
             _db.SaveChanges();
             Notes.Remove(note);
         }
-
         private void DeleteMarkedNotes()
         {
             var markedNotes = Notes.Where(n => n.IsMarkedForDeletion).ToList();
@@ -290,6 +236,27 @@ namespace Notatnik.ViewModels
             _db.SaveChanges();
         }
 
+        private void MoveNote(Note noteToMove)
+        {
+            if (noteToMove == null) return;
+
+            var dlg = new MoveNoteWindow(_db, noteToMove.FolderId)
+            {
+                Owner = Application.Current.MainWindow
+            };
+
+            if (dlg.ShowDialog() != true) return;
+
+            var targetFolder = dlg.SelectedFolder;
+            if (targetFolder == null || targetFolder.Id == noteToMove.FolderId) return;
+
+            noteToMove.FolderId = targetFolder.Id;
+            noteToMove.ModifiedAt = DateTime.Now;
+
+            _db.SaveChanges();
+            LoadNotes();
+        }
+
         private void AddFolder()
         {
             var dlg = new FolderDetailsWindow();
@@ -302,7 +269,37 @@ namespace Notatnik.ViewModels
             Folders.Add(folder);
             SelectedFolder = folder;
         }
+        private void EditFolder()
+        {
+            if (SelectedFolder == null) return;
 
+            var dlg = new FolderDetailsWindow
+            {
+                FolderName = SelectedFolder.Name
+            };
+
+            if (dlg.ShowDialog() == true)
+            {
+                SelectedFolder.Name = dlg.FolderName;
+                SelectedFolder.OnPropertyChanged(nameof(SelectedFolder.Name));
+                _db.SaveChanges();
+            }
+        }
+        private void DeleteFolder(Folder folder)
+        {
+            if (folder == null) return;
+
+            var ask = MessageBox.Show($"Czy na pewno usunąć „{folder.Name}”? Usunięte zostaną również notatki zawarte w tym folderze.",
+                                      "Potwierdź usunięcie",
+                                      MessageBoxButton.YesNo,
+                                      MessageBoxImage.Warning);
+
+            if (ask != MessageBoxResult.Yes) return;
+
+            _db.Folders.Remove(folder);
+            _db.SaveChanges();
+            Folders.Remove(folder);
+        }
         private void DeleteMarkedFolders()
         {
             var markedFolders = Folders.Where(f => f.IsMarkedForDeletion).ToList();
@@ -327,7 +324,6 @@ namespace Notatnik.ViewModels
             if (!Folders.Contains(SelectedFolder))
                 SelectedFolder = Folders.FirstOrDefault();
         }
-
         private void DeleteFolderRecursive(Folder folder)
         {
             var notesInFolder = _db.Notes.Where(n => n.FolderId == folder.Id).ToList();
@@ -349,23 +345,6 @@ namespace Notatnik.ViewModels
             };
             searchWin.Show();
         }
-
-        public void OpenNoteForEdit(Note noteToEdit)
-        {
-            if (noteToEdit == null) return;
-
-            SingleSelectedNote = Notes.FirstOrDefault(n => n.Id == noteToEdit.Id);
-
-            var vm = new NoteDetailsViewModel(noteToEdit, _db);
-            var win = new NoteDetailsWindow(vm);
-            if (win.ShowDialog() == true)
-            {
-                noteToEdit.ModifiedAt = DateTime.Now;
-                _db.SaveChanges();
-                LoadNotes();
-            }
-        }
-
         private void Print()
         {
             if (SingleSelectedNote == null)
@@ -387,24 +366,6 @@ namespace Notatnik.ViewModels
             }
         }
 
-        private void EditFolder()
-        {
-            if (SelectedFolder == null) return;
-
-            var dlg = new FolderDetailsWindow
-            {
-                FolderName = SelectedFolder.Name
-            };
-
-            if (dlg.ShowDialog() == true)
-            {
-                SelectedFolder.Name = dlg.FolderName;
-                SelectedFolder.OnPropertyChanged(nameof(SelectedFolder.Name));
-                _db.SaveChanges();
-            }
-        }
-
-        /* -------------- INotifyPropertyChanged -------------- */
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string name) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
