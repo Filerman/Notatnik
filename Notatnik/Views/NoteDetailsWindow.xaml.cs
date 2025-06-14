@@ -44,33 +44,48 @@ namespace Notatnik.Views
 
         private void OnVmRequestClose(object sender, bool dialogResult)
         {
+            // jeżeli kliknięto „Zapisz”
             if (dialogResult)
             {
-                // Przy zapisie: jeśli LongFormat → odczytaj XAML z RichTextBoxa
+                // ───────────────────────────────────────────────────────
+                // 1. Jeśli to notatka LongFormat → pobierz XAML z RichTextBox
+                // ───────────────────────────────────────────────────────
                 if (_vm.Note.Type == NoteType.LongFormat)
                 {
-                    /*var range = new TextRange(RichTextEditor.Document.ContentStart, RichTextEditor.Document.ContentEnd);
-                    using var ms = new MemoryStream();
-                    range.Save(ms, DataFormats.Xaml);
-                    _vm.Note.Content = Encoding.UTF8.GetString(ms.ToArray());*/
+                    var range = new TextRange(RichTextEditor.Document.ContentStart,
+                                              RichTextEditor.Document.ContentEnd);
 
-                    var range = new TextRange(RichTextEditor.Document.ContentStart, RichTextEditor.Document.ContentEnd);
+                    // Zapisz cały FlowDocument jako XAML do Note.Content
                     using (var ms = new MemoryStream())
                     {
-                        range.Save(ms, DataFormats.Xaml);  // Zapisz jako XAML (cały FlowDocument)
+                        range.Save(ms, DataFormats.Xaml);
                         ms.Position = 0;
-                        using (var reader = new StreamReader(ms))
-                        {
-                            _vm.Note.Content = reader.ReadToEnd();  // Zapisz do Content w modelu
-                        }
+                        using var reader = new StreamReader(ms);
+                        _vm.Note.Content = reader.ReadToEnd();
                     }
 
+                    // ───────────────────────────────────────────────────
+                    // 2. Walidacja – LongFormat nie może być pusty
+                    // ───────────────────────────────────────────────────
+                    string plain = range.Text;                // „goły” tekst bez formatowania
+                    if (string.IsNullOrWhiteSpace(plain.Trim()))
+                    {
+                        MessageBox.Show("Notatka nie może być pusta.",
+                                        "Walidacja",
+                                        MessageBoxButton.OK,
+                                        MessageBoxImage.Warning);
+                        return;                               // przerwij, NIE zamykaj okna
+                    }
                 }
+
+                // (dla Regular / CheckList walidacja dzieje się w ViewModel-u)
             }
 
+            // jeśli dotarliśmy tutaj – wszystko OK lub kliknięto Anuluj
             DialogResult = dialogResult;
             Close();
         }
+
 
         /// <summary>
         /// Zwiększa wcięcie wszystkich akapitów znajdujących się w zaznaczeniu o 20px.

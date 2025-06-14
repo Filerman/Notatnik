@@ -53,8 +53,9 @@
                                VerticalAlignment="Center"
                                Margin="0,0,10,0"/>
                     <TextBox Text="{Binding Note.Title, UpdateSourceTrigger=PropertyChanged}"
-                             Height="22"
-                             Width="600"/>
+             Height="22"
+             Width="600"
+             MaxLength="60"/>
                 </StackPanel>
 
                 <!-- 2.1. Pole do zarządzania tagami -->
