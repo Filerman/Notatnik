@@ -354,6 +354,7 @@ namespace Notatnik.ViewModels
             foreach (var folder in markedFolders)
             {
                 DeleteFolderRecursive(folder);
+                _db.Folders.Remove(folder);
                 Folders.Remove(folder);
             }
 
