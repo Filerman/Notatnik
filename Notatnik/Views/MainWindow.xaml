@@ -86,15 +86,15 @@
                         SelectionMode="Single">
                     <ListView.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Header="Edytuj" 
+                            <MenuItem Header="Edytuj" Icon="✏️"
                                       Command="{Binding EditFolderCommand}"/>
-                            <MenuItem Header="Usuń" 
+                            <MenuItem Header="Usuń" Icon="🗑️"
                                       Command="{Binding DeleteFolderCommand}"
                                       CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
-                            <MenuItem Header="Usuń zaznaczone" 
+                            <MenuItem Header="Usuń zaznaczone" Icon="🗑️"
                                       Command="{Binding DeleteMarkedFoldersCommand}"/>
                             <Separator/>
-                            <MenuItem Header="Właściwości" 
+                            <MenuItem Header="Właściwości" Icon="ℹ️"
                                       Command="{Binding NotePropertiesCommand}" 
                                       CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
                         </ContextMenu>
@@ -140,31 +140,32 @@
 
                     <ListView.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Header="Edytuj"
+                            <MenuItem Header="Edytuj" Icon="✏️"
                                       Command="{Binding EditNoteCommand}"
                                       CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu},
                                                                  Path=PlacementTarget.SelectedItem}"/>
 
-                            <MenuItem Header="Usuń"
+                            <MenuItem Header="Usuń" Icon="🗑️"
                                       Command="{Binding DeleteNoteCommand}"
                                       CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu},
                                                                  Path=PlacementTarget.SelectedItem}"/>
 
-                            <MenuItem Header="Usuń zaznaczone"
+                            <MenuItem Header="Usuń zaznaczone" Icon="🗑️"
                                       Command="{Binding DeleteMarkedNotesCommand}"/>
-                            <MenuItem Header="Przenieś do folderu..."
+
+                            <MenuItem Header="Przenieś do folderu..." Icon="📂"
                                       Command="{Binding MoveNoteCommand}"
                                       CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu},
                                                                  Path=PlacementTarget.SelectedItem}"/>
 
-                            <MenuItem Header="Kopiuj do folderu…"
+                            <MenuItem Header="Kopiuj do folderu…" Icon="📋"
                                       Command="{Binding CopyNoteCommand}"
                                       CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu},
                                                                  Path=PlacementTarget.SelectedItem}"/>
 
                             <Separator/>
 
-                            <MenuItem Header="Właściwości"
+                            <MenuItem Header="Właściwości" Icon="ℹ️"
                                       Command="{Binding NotePropertiesCommand}"
                                       CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu},
                                                                  Path=PlacementTarget.SelectedItem}"/>
