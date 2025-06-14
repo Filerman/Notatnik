@@ -340,7 +340,12 @@ namespace Notatnik.ViewModels
 
         private void AddFolder()
         {
-            var dlg = new FolderDetailsWindow();
+            // delegat: TRUE gdy istnieje folder o tej samej nazwie (bez względu na wielkość liter)
+            bool NameExists(string name) =>
+                _db.Folders.Any(f => f.Name.ToLower() == name.ToLower());
+
+            var dlg = new FolderDetailsWindow(NameExists);
+
             if (dlg.ShowDialog() != true) return;
 
             var folder = new Folder { Name = dlg.FolderName };
@@ -354,9 +359,15 @@ namespace Notatnik.ViewModels
         {
             if (SelectedFolder == null) return;
 
-            var dlg = new FolderDetailsWindow
+            bool NameExists(string name) =>
+                _db.Folders.Any(f =>
+                      f.Id != SelectedFolder.Id &&               // pomijamy aktualny
+                      f.Name.ToLower() == name.ToLower());
+
+            var dlg = new FolderDetailsWindow(NameExists)
             {
-                FolderName = SelectedFolder.Name
+                FolderName = SelectedFolder.Name,
+                Title = "Edytuj folder"
             };
 
             if (dlg.ShowDialog() == true)
