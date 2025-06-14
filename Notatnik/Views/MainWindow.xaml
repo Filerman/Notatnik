@@ -86,9 +86,17 @@
                         SelectionMode="Single">
                     <ListView.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Header="Edytuj" Command="{Binding EditFolderCommand}"/>
-                            <MenuItem Header="Usuń" Command="{Binding DeleteFolderCommand}"
-                            CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
+                            <MenuItem Header="Edytuj" 
+                                      Command="{Binding EditFolderCommand}"/>
+                            <MenuItem Header="Usuń" 
+                                      Command="{Binding DeleteFolderCommand}"
+                                      CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
+                            <MenuItem Header="Usuń zaznaczone" 
+                                      Command="{Binding DeleteMarkedFoldersCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="Właściwości" 
+                                      Command="{Binding NotePropertiesCommand}" 
+                                      CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
                         </ContextMenu>
                     </ListView.ContextMenu>
                     <ListView.View>
