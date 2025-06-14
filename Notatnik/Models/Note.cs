@@ -21,17 +21,12 @@ namespace Notatnik.Models
     {
         public int Id { get; set; }
         public string Title { get; set; }
-
-        // Zawartość notatki – dla LongFormat będzie to XAML z RichTextBoxa.
         public string Content { get; set; }
-
         public NoteType Type { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime ModifiedAt { get; set; }
-
         public int FolderId { get; set; }
         public Folder Folder { get; set; }
-
         public List<ChecklistItem> ChecklistItems { get; set; } = new List<ChecklistItem>();
         public List<Tag> Tags { get; set; } = new List<Tag>();
 
@@ -67,18 +62,14 @@ namespace Notatnik.Models
                         {
                             try
                             {
-                                // Tworzymy nowy pusty FlowDocument, aby załadować do niego XAML z Content.
                                 var flowDoc = new FlowDocument();
                                 var textRange = new TextRange(flowDoc.ContentStart, flowDoc.ContentEnd);
 
-                                // Zamieniamy Content (ciąg XAML) na strumień bajtów
                                 using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(Content)))
                                 {
-                                    // Ładujemy strumień jako XAML do `flowDoc`
                                     textRange.Load(ms, DataFormats.Xaml);
                                 }
 
-                                // Teraz textRange.Text zawiera już czysty tekst
                                 var plain = textRange.Text.Trim().Replace("\r", "").Replace("\n", " ");
                                 if (plain.Length <= 100)
                                     return plain;

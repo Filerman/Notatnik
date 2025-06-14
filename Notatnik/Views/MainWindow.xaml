@@ -34,6 +34,7 @@
             <MenuItem Header="_Statystyki">
                 <MenuItem Header="Dane" />
                 <MenuItem Header="Wykres..." />
+                <MenuItem Header="Historia" />
             </MenuItem>
         </Menu>
 
@@ -61,7 +62,7 @@
                 <ColumnDefinition Width="4*" />
             </Grid.ColumnDefinitions>
 
-            <!--  Foldery (bez zmian) -->
+            <!--  Foldery -->
             <Grid Grid.Column="0" Margin="5">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -72,10 +73,17 @@
                 <TextBlock Text="Foldery" FontSize="14" FontWeight="Bold" Margin="0,0,0,5" Grid.Row="0"/>
 
                 <ListView x:Name="ListViewFolders"
-                          Grid.Row="1"
-                          ItemsSource="{Binding Folders}"
-                          SelectedItem="{Binding SelectedFolder}"
-                          SelectionMode="Single">
+                        Grid.Row="1"
+                        ItemsSource="{Binding Folders}"
+                        SelectedItem="{Binding SelectedFolder}"
+                        SelectionMode="Single">
+                    <ListView.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Edytuj" Command="{Binding EditFolderCommand}"/>
+                            <MenuItem Header="Usuń" Command="{Binding DeleteFolderCommand}"
+                            CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
+                        </ContextMenu>
+                    </ListView.ContextMenu>
                     <ListView.View>
                         <GridView>
                             <GridViewColumn Header="" Width="30">
@@ -86,8 +94,8 @@
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
                             <GridViewColumn Header="Nazwa folderu"
-                                            DisplayMemberBinding="{Binding Name}"
-                                            Width="200"/>
+                          DisplayMemberBinding="{Binding Name}"
+                          Width="200"/>
                         </GridView>
                     </ListView.View>
                 </ListView>
@@ -114,7 +122,6 @@
                           HorizontalAlignment="Stretch"
                           MouseDoubleClick="ListViewNotes_MouseDoubleClick">
 
-                    <!-- ▼ NOWE + istniejące pozycje PPM -->
                     <ListView.ContextMenu>
                         <ContextMenu>
                             <MenuItem Header="Edytuj"
@@ -125,11 +132,9 @@
                                       CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
                             <MenuItem Header="Usuń zaznaczone"
                                       Command="{Binding DeleteMarkedNotesCommand}"/>
-                            <!--  NOWE POLECENIE -->
                             <MenuItem Header="Przenieś do folderu..."
                                       Command="{Binding MoveNoteCommand}"
                                       CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
-                            <!--  -->
                             <Separator/>
                             <MenuItem Header="Właściwości"
                                       Command="{Binding NotePropertiesCommand}"
