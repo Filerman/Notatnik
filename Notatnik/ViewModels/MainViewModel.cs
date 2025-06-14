@@ -14,11 +14,14 @@ namespace Notatnik.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged
     {
+        // ─────────────────────────────────────────── FIELDS
         private readonly AppDbContext _db;
 
+        // ─────────────────────────────────────────── PROPERTIES
         public ObservableCollection<Folder> Folders { get; }
         public ObservableCollection<Note> Notes { get; }
 
+        // Komendy główne
         public ICommand AddNoteCommand { get; }
         public ICommand EditNoteCommand { get; }
         public ICommand DeleteMarkedNotesCommand { get; }
@@ -32,10 +35,11 @@ namespace Notatnik.ViewModels
         public ICommand SearchCommand { get; }
         public ICommand PrintCommand { get; }
 
-        /* === NOWA KOMENDA === */
+        // Nowe komendy przenoszenia / kopiowania
         public ICommand MoveNoteCommand { get; }
-        /* ==================== */
+        public ICommand CopyNoteCommand { get; }
 
+        // Wybrany folder i pojedyncza notatka
         private Folder _selectedFolder;
         public Folder SelectedFolder
         {
@@ -65,14 +69,19 @@ namespace Notatnik.ViewModels
             }
         }
 
+        // ─────────────────────────────────────────── CTOR
         public MainViewModel()
         {
             _db = new AppDbContextFactory().CreateDbContext(null);
 
-            var folderList = _db.Folders.Include(f => f.Subfolders).ToList();
-            Folders = new ObservableCollection<Folder>(folderList);
+            // Załaduj foldery
+            Folders = new ObservableCollection<Folder>(
+                _db.Folders.Include(f => f.Subfolders).ToList());
+
+            // Lista notatek pustą zapełnia LoadNotes()
             Notes = new ObservableCollection<Note>();
 
+            #region inicjalizacja_komend
             AddNoteCommand = new RelayCommand(_ => AddNote(), _ => SelectedFolder != null);
             EditNoteCommand = new RelayCommand(_ => EditNote(), _ => SingleSelectedNote != null);
             DeleteMarkedNotesCommand = new RelayCommand(_ => DeleteMarkedNotes(), _ => Notes.Any(n => n.IsMarkedForDeletion));
@@ -86,88 +95,119 @@ namespace Notatnik.ViewModels
             SearchCommand = new RelayCommand(_ => OpenSearchWindow());
             PrintCommand = new RelayCommand(_ => Print());
 
-            /* --- Inicjalizacja nowej komendy --- */
             MoveNoteCommand = new RelayCommand(p => MoveNote(p as Note), p => p is Note);
-            /* ----------------------------------- */
+            CopyNoteCommand = new RelayCommand(p => CopyNote(p as Note), p => p is Note);
+            #endregion
 
+            // Domyślny wybór pierwszego folderu
             if (Folders.Any())
                 SelectedFolder = Folders.First();
         }
 
-        /* ===== LOGIKA PRZENOSZENIA NOTATKI ===== */
+        // ─────────────────────────────────────────── MOVE NOTE
         private void MoveNote(Note noteToMove)
         {
             if (noteToMove == null) return;
 
             var dlg = new MoveNoteWindow(_db, noteToMove.FolderId)
             {
-                Owner = Application.Current.MainWindow
+                Owner = Application.Current.MainWindow,
+                Title = "Przenieś notatkę do folderu"
             };
 
             if (dlg.ShowDialog() != true) return;
 
-            var targetFolder = dlg.SelectedFolder;
-            if (targetFolder == null || targetFolder.Id == noteToMove.FolderId) return;
+            var target = dlg.SelectedFolder;
+            if (target == null || target.Id == noteToMove.FolderId) return;
 
-            noteToMove.FolderId = targetFolder.Id;
+            noteToMove.FolderId = target.Id;
             noteToMove.ModifiedAt = DateTime.Now;
 
             _db.SaveChanges();
             LoadNotes();
         }
-        /* ======================================= */
 
-        /* --------- POZOSTAŁE NIEZMIENIONE METODY --------- */
+        // ─────────────────────────────────────────── COPY NOTE
+        private void CopyNote(Note source)
+        {
+            if (source == null) return;
 
+            var dlg = new MoveNoteWindow(_db, source.FolderId)
+            {
+                Owner = Application.Current.MainWindow,
+                Title = "Skopiuj notatkę do folderu"
+            };
+
+            if (dlg.ShowDialog() != true) return;
+            var target = dlg.SelectedFolder;
+            if (target == null) return;
+
+            var copy = new Note
+            {
+                Title = $"{source.Title} - kopia",
+                Content = source.Content,
+                Type = source.Type,
+                CreatedAt = DateTime.Now,
+                ModifiedAt = DateTime.Now,
+                FolderId = target.Id,
+                Tags = source.Tags.ToList()
+            };
+
+            foreach (var item in source.ChecklistItems)
+            {
+                copy.ChecklistItems.Add(new ChecklistItem
+                {
+                    Text = item.Text,
+                    IsChecked = item.IsChecked
+                });
+            }
+
+            _db.Notes.Add(copy);
+            _db.SaveChanges();
+
+            if (target.Id == SelectedFolder?.Id)
+                LoadNotes();
+        }
+
+        // ─────────────────────────────────────────── LOAD NOTES
         private void LoadNotes()
         {
             Notes.Clear();
             if (SelectedFolder == null) return;
 
-            var notesInFolder = _db.Notes
-                                   .Where(n => n.FolderId == SelectedFolder.Id)
-                                   .Include(n => n.ChecklistItems)
-                                   .ToList();
+            var list = _db.Notes
+                          .Where(n => n.FolderId == SelectedFolder.Id)
+                          .Include(n => n.ChecklistItems)
+                          .ToList();
 
-            foreach (var note in notesInFolder)
+            foreach (var n in list)
             {
-                note.IsMarkedForDeletion = false;
-                Notes.Add(note);
+                n.IsMarkedForDeletion = false;
+                Notes.Add(n);
             }
         }
 
+        // ─────────────────────────────────────────── ADD NOTE (wybór typu)
         private void AddNote()
         {
-            var typeDlg = new SelectNoteTypeWindow();
-            if (typeDlg.ShowDialog() != true) return;
+            var dlg = new SelectNoteTypeWindow();
+            if (dlg.ShowDialog() != true) return;
 
-            var note = new Note
-            {
-                CreatedAt = DateTime.Now,
-                ModifiedAt = DateTime.Now,
-                FolderId = SelectedFolder.Id,
-                Type = typeDlg.SelectedType,
-                Content = string.Empty
-            };
-
-            var vm = new NoteDetailsViewModel(note, _db);
-            var win = new NoteDetailsWindow(vm);
-            if (win.ShowDialog() == true)
-            {
-                _db.Notes.Add(note);
-                _db.SaveChanges();
-                LoadNotes();
-            }
+            CreateAndEditNewNote(dlg.SelectedType);
         }
 
-        private void AddTextNote()
+        private void AddTextNote() => CreateAndEditNewNote(NoteType.Regular);
+        private void AddCheckboxNote() => CreateAndEditNewNote(NoteType.CheckList);
+        private void AddLongNote() => CreateAndEditNewNote(NoteType.LongFormat);
+
+        private void CreateAndEditNewNote(NoteType type)
         {
             var note = new Note
             {
                 CreatedAt = DateTime.Now,
                 ModifiedAt = DateTime.Now,
                 FolderId = SelectedFolder.Id,
-                Type = NoteType.Regular,
+                Type = type,
                 Content = string.Empty
             };
 
@@ -181,58 +221,16 @@ namespace Notatnik.ViewModels
             }
         }
 
-        private void AddCheckboxNote()
-        {
-            var note = new Note
-            {
-                CreatedAt = DateTime.Now,
-                ModifiedAt = DateTime.Now,
-                FolderId = SelectedFolder.Id,
-                Type = NoteType.CheckList,
-                Content = string.Empty
-            };
-
-            var vm = new NoteDetailsViewModel(note, _db);
-            var win = new NoteDetailsWindow(vm);
-            if (win.ShowDialog() == true)
-            {
-                _db.Notes.Add(note);
-                _db.SaveChanges();
-                LoadNotes();
-            }
-        }
-
-        private void AddLongNote()
-        {
-            var note = new Note
-            {
-                CreatedAt = DateTime.Now,
-                ModifiedAt = DateTime.Now,
-                FolderId = SelectedFolder.Id,
-                Type = NoteType.LongFormat,
-                Content = string.Empty
-            };
-
-            var vm = new NoteDetailsViewModel(note, _db);
-            var win = new NoteDetailsWindow(vm);
-            if (win.ShowDialog() == true)
-            {
-                _db.Notes.Add(note);
-                _db.SaveChanges();
-                LoadNotes();
-            }
-        }
-
+        // ─────────────────────────────────────────── EDIT / DELETE NOTE
         private void EditNote()
         {
             if (SingleSelectedNote == null) return;
-            var noteToEdit = SingleSelectedNote;
 
-            var vm = new NoteDetailsViewModel(noteToEdit, _db);
+            var vm = new NoteDetailsViewModel(SingleSelectedNote, _db);
             var win = new NoteDetailsWindow(vm);
             if (win.ShowDialog() == true)
             {
-                noteToEdit.ModifiedAt = DateTime.Now;
+                SingleSelectedNote.ModifiedAt = DateTime.Now;
                 _db.SaveChanges();
                 LoadNotes();
             }
@@ -242,13 +240,12 @@ namespace Notatnik.ViewModels
         {
             if (note == null) return;
 
-            var result = MessageBox.Show(
-                $"Czy na pewno chcesz usunąć notatkę \"{note.Title}\"?",
-                "Potwierdź usunięcie",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
+            var ask = MessageBox.Show($"Czy na pewno usunąć „{note.Title}”?",
+                                      "Potwierdź usunięcie",
+                                      MessageBoxButton.YesNo,
+                                      MessageBoxImage.Question);
 
-            if (result != MessageBoxResult.Yes) return;
+            if (ask != MessageBoxResult.Yes) return;
 
             _db.Notes.Remove(note);
             _db.SaveChanges();
@@ -257,25 +254,25 @@ namespace Notatnik.ViewModels
 
         private void DeleteMarkedNotes()
         {
-            var markedNotes = Notes.Where(n => n.IsMarkedForDeletion).ToList();
-            if (!markedNotes.Any()) return;
+            var marked = Notes.Where(n => n.IsMarkedForDeletion).ToList();
+            if (!marked.Any()) return;
 
-            var wynik = MessageBox.Show(
-                $"Czy na pewno chcesz usunąć {markedNotes.Count} zaznaczoną{(markedNotes.Count == 1 ? "ą" : "e")} notatkę(i)?",
-                "Potwierdź usunięcie",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
+            var ask = MessageBox.Show($"Usunąć {marked.Count} zaznaczon{(marked.Count == 1 ? "ą" : "e")} notatk{(marked.Count == 1 ? "ę" : "i")}?",
+                                      "Potwierdź usunięcie",
+                                      MessageBoxButton.YesNo,
+                                      MessageBoxImage.Question);
 
-            if (wynik != MessageBoxResult.Yes) return;
+            if (ask != MessageBoxResult.Yes) return;
 
-            foreach (var note in markedNotes)
+            foreach (var n in marked)
             {
-                _db.Notes.Remove(note);
-                Notes.Remove(note);
+                _db.Notes.Remove(n);
+                Notes.Remove(n);
             }
             _db.SaveChanges();
         }
 
+        // ─────────────────────────────────────────── FOLDERS CRUD
         private void AddFolder()
         {
             var dlg = new FolderDetailsWindow();
@@ -291,23 +288,21 @@ namespace Notatnik.ViewModels
 
         private void DeleteMarkedFolders()
         {
-            var markedFolders = Folders.Where(f => f.IsMarkedForDeletion).ToList();
-            if (!markedFolders.Any()) return;
+            var marked = Folders.Where(f => f.IsMarkedForDeletion).ToList();
+            if (!marked.Any()) return;
 
-            var wynik = MessageBox.Show(
-                $"Czy na pewno chcesz usunąć {markedFolders.Count} zaznaczony{(markedFolders.Count == 1 ? "y" : "e")} folder(y) wraz z całą zawartością?",
-                "Potwierdź usunięcie",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning);
+            var ask = MessageBox.Show($"Usunąć {marked.Count} zaznaczon{(marked.Count == 1 ? "y" : "e")} folder(y) wraz z zawartością?",
+                                      "Potwierdź usunięcie",
+                                      MessageBoxButton.YesNo,
+                                      MessageBoxImage.Warning);
 
-            if (wynik != MessageBoxResult.Yes) return;
+            if (ask != MessageBoxResult.Yes) return;
 
-            foreach (var folder in markedFolders)
+            foreach (var f in marked)
             {
-                DeleteFolderRecursive(folder);
-                Folders.Remove(folder);
+                DeleteFolderRecursive(f);
+                Folders.Remove(f);
             }
-
             _db.SaveChanges();
 
             if (!Folders.Contains(SelectedFolder))
@@ -316,72 +311,20 @@ namespace Notatnik.ViewModels
 
         private void DeleteFolderRecursive(Folder folder)
         {
-            var notesInFolder = _db.Notes.Where(n => n.FolderId == folder.Id).ToList();
-            foreach (var n in notesInFolder)
+            foreach (var n in _db.Notes.Where(n => n.FolderId == folder.Id).ToList())
                 _db.Notes.Remove(n);
 
-            var subfolders = _db.Folders.Where(f => f.ParentFolderId == folder.Id).ToList();
-            foreach (var sub in subfolders)
+            foreach (var sub in _db.Folders.Where(f => f.ParentFolderId == folder.Id).ToList())
                 DeleteFolderRecursive(sub);
 
             _db.Folders.Remove(folder);
-        }
-
-        private void OpenSearchWindow()
-        {
-            var searchWin = new SearchWindow(_db, this)
-            {
-                Owner = Application.Current.MainWindow
-            };
-            searchWin.Show();
-        }
-
-        public void OpenNoteForEdit(Note noteToEdit)
-        {
-            if (noteToEdit == null) return;
-
-            SingleSelectedNote = Notes.FirstOrDefault(n => n.Id == noteToEdit.Id);
-
-            var vm = new NoteDetailsViewModel(noteToEdit, _db);
-            var win = new NoteDetailsWindow(vm);
-            if (win.ShowDialog() == true)
-            {
-                noteToEdit.ModifiedAt = DateTime.Now;
-                _db.SaveChanges();
-                LoadNotes();
-            }
-        }
-
-        private void Print()
-        {
-            if (SingleSelectedNote == null)
-            {
-                MessageBox.Show("Wybierz notatkę do wydrukowania.", "Drukowanie",
-                                MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-
-            var printDialog = new System.Windows.Controls.PrintDialog();
-            if (printDialog.ShowDialog() == true)
-            {
-                var doc = new System.Windows.Documents.FlowDocument(
-                    new System.Windows.Documents.Paragraph(
-                        new System.Windows.Documents.Run(SingleSelectedNote.Content)));
-                doc.Name = "NotePrintDocument";
-                printDialog.PrintDocument(((System.Windows.Documents.IDocumentPaginatorSource)doc)
-                                          .DocumentPaginator, "Drukowanie notatki");
-            }
         }
 
         private void EditFolder()
         {
             if (SelectedFolder == null) return;
 
-            var dlg = new FolderDetailsWindow
-            {
-                FolderName = SelectedFolder.Name
-            };
-
+            var dlg = new FolderDetailsWindow { FolderName = SelectedFolder.Name };
             if (dlg.ShowDialog() == true)
             {
                 SelectedFolder.Name = dlg.FolderName;
@@ -390,9 +333,50 @@ namespace Notatnik.ViewModels
             }
         }
 
-        /* -------------- INotifyPropertyChanged -------------- */
+        // ─────────────────────────────────────────── SEARCH / PRINT
+        private void OpenSearchWindow()
+        {
+            var win = new SearchWindow(_db, this)
+            {
+                Owner = Application.Current.MainWindow
+            };
+            win.Show();
+        }
+
+        public void OpenNoteForEdit(Note note)
+        {
+            if (note == null) return;
+
+            SingleSelectedNote = Notes.FirstOrDefault(n => n.Id == note.Id);
+            EditNote();
+        }
+
+        private void Print()
+        {
+            if (SingleSelectedNote == null)
+            {
+                MessageBox.Show("Wybierz notatkę do wydrukowania.",
+                                "Drukowanie",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Information);
+                return;
+            }
+
+            var pd = new System.Windows.Controls.PrintDialog();
+            if (pd.ShowDialog() == true)
+            {
+                var flow = new System.Windows.Documents.FlowDocument(
+                    new System.Windows.Documents.Paragraph(
+                        new System.Windows.Documents.Run(SingleSelectedNote.Content)));
+
+                pd.PrintDocument(((System.Windows.Documents.IDocumentPaginatorSource)flow)
+                                 .DocumentPaginator, "Drukowanie notatki");
+            }
+        }
+
+        // ─────────────────────────────────────────── INotifyPropertyChanged
         public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged(string name) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        private void OnPropertyChanged(string prop) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
     }
 }
