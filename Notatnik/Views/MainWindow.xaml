@@ -72,54 +72,65 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Text="Foldery"
-                           FontSize="14"
-                           FontWeight="Bold"
-                           Margin="0,0,0,5"/>
 
-                <ListView x:Name="ListViewFolders"
-                        Grid.Row="1"
-                        ItemsSource="{Binding Folders}"
-                        SelectedItem="{Binding SelectedFolder}"
-                        SelectionMode="Single">
-                    <ListView.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem Header="Edytuj" Icon="✏️"
-                                      Command="{Binding EditFolderCommand}"/>
-                            <MenuItem Header="Usuń" Icon="🗑️"
-                                      Command="{Binding DeleteFolderCommand}"
-                                      CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
-                            <MenuItem Header="Usuń zaznaczone" Icon="🗑️"
-                                      Command="{Binding DeleteMarkedFoldersCommand}"/>
-                            <Separator/>
-                            <MenuItem Header="Właściwości" Icon="ℹ️"
-                                      Command="{Binding NotePropertiesCommand}" 
-                                      CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
-                        </ContextMenu>
-                    </ListView.ContextMenu>
-                    <ListView.View>
-                        <GridView>
-                            <GridViewColumn Header="" Width="30">
-                                <GridViewColumn.HeaderTemplate>
-                                    <DataTemplate>
-                                        <CheckBox x:Name="HeaderCheckboxFolders" 
-                                  Checked="HeaderCheckboxFolders_Checked" 
-                                  Unchecked="HeaderCheckboxFolders_Unchecked"/>
-                                    </DataTemplate>
-                                </GridViewColumn.HeaderTemplate>
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <CheckBox IsChecked="{Binding IsMarkedForDeletion, Mode=TwoWay}"/>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                    <CheckBox x:Name="HeaderCheckboxFolders" 
+              Checked="HeaderCheckboxFolders_Checked"
+              Unchecked="HeaderCheckboxFolders_Unchecked"
+              Margin="0,3,5,0"/>
+                    <TextBlock Text="Foldery" FontSize="14" FontWeight="Bold"/>
+                </StackPanel>
 
-                            <GridViewColumn Header="Nazwa folderu"
-                          DisplayMemberBinding="{Binding Name}"
-                          Width="155"/>
-                        </GridView>
-                    </ListView.View>
-                </ListView>
+                <TreeView x:Name="TreeViewFolders"
+                          Grid.Row="1"
+                          ItemsSource="{Binding Folders}"
+                          SelectedItemChanged="TreeViewFolders_SelectedItemChanged">
+                    <TreeView.ItemContainerStyle>
+                        <Style TargetType="{x:Type TreeViewItem}">
+                            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+                            <Setter Property="IsExpanded" Value="True"/>
+                            <Setter Property="ContextMenu">
+                                <Setter.Value>
+                                    <ContextMenu>
+                                        <MenuItem Header="Edytuj" Icon="✏️"
+                                                  Command="{Binding EditFolderCommand}"
+                                                  CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu},
+                                            Path=PlacementTarget.SelectedItem}"/>
+                                        <MenuItem Header="Dodaj podfolder" Icon="📁"
+                                                  Command="{Binding AddSubfolderCommand}"
+                                                  CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu},
+                                            Path=PlacementTarget.SelectedItem}"/>
+
+                                        <MenuItem Header="Usuń" Icon="🗑️"
+                                                  Command="{Binding DeleteFolderCommand}"
+                                                  CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu},
+                                            Path=PlacementTarget.SelectedItem}"/>
+
+                                        <MenuItem Header="Usuń zaznaczone" Icon="🗑️"
+                                                  Command="{Binding DeleteMarkedItemsCommand}"/>
+
+                                        <MenuItem Header="Przenieś do folderu..." Icon="📂"
+                                                  Command="{Binding MoveFolderCommand}"
+                                                  CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu},
+                                            Path=PlacementTarget.SelectedItem}"/>
+
+                                    </ContextMenu>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </TreeView.ItemContainerStyle>
+
+                    <TreeView.ItemTemplate>
+                        <HierarchicalDataTemplate ItemsSource="{Binding Subfolders}">
+                            <StackPanel Orientation="Horizontal">
+                                <CheckBox IsChecked="{Binding IsMarkedForDeletion, Mode=TwoWay}"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,5,0"/>
+                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </HierarchicalDataTemplate>
+                    </TreeView.ItemTemplate>
+                </TreeView>
             </Grid>
 
             <Border Grid.Column="1" Background="LightGray" Width="1"/>

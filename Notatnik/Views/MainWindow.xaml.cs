@@ -17,25 +17,21 @@ namespace Notatnik.Views
             InitializeComponent();
         }
 
-        private void ListViewFolders_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        /*private void ListViewFolders_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (ViewModel == null) return;
             if (ListViewFolders.SelectedItems.Count == 1)
                 ViewModel.SelectedFolder = ListViewFolders.SelectedItem as Folder;
-        }
+        }*/
 
         private void HeaderCheckboxFolders_Checked(object sender, RoutedEventArgs e)
         {
-            if (ViewModel == null) return;
-            foreach (var folder in ViewModel.Folders)
-                folder.IsMarkedForDeletion = true;
+            SelectAllFolders(true);
         }
 
         private void HeaderCheckboxFolders_Unchecked(object sender, RoutedEventArgs e)
         {
-            if (ViewModel == null) return;
-            foreach (var folder in ViewModel.Folders)
-                folder.IsMarkedForDeletion = false;
+            SelectAllFolders(false);
         }
 
         private void HeaderCheckboxNotes_Checked(object sender, RoutedEventArgs e)
@@ -68,6 +64,33 @@ namespace Notatnik.Views
                 {
                     vm.EditNoteCommand.Execute(null);
                 }
+            }
+        }
+
+        private void TreeViewFolders_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            if (ViewModel != null && e.NewValue is Folder selectedFolder)
+            {
+                ViewModel.SelectedFolder = selectedFolder;
+            }
+        }
+
+        private void SelectAllFolders(bool select)
+        {
+            if (ViewModel == null) return;
+
+            foreach (var folder in ViewModel.Folders)
+            {
+                SetFolderSelection(folder, select);
+            }
+        }
+
+        private void SetFolderSelection(Folder folder, bool select)
+        {
+            folder.IsMarkedForDeletion = select;
+            foreach (var subfolder in folder.Subfolders)
+            {
+                SetFolderSelection(subfolder, select);
             }
         }
 

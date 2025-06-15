@@ -496,17 +496,34 @@ namespace Notatnik.ViewModels
         private void AddFolder()
         {
             bool NameExists(string name) =>
-                _db.Folders.Any(f => f.Name.ToLower() == name.ToLower());
+                _db.Folders.Any(f => f.ParentFolderId == SelectedFolder.Id &&
+                                    f.Name.ToLower() == name.ToLower());
 
-            var dlg = new FolderDetailsWindow(NameExists);
+            var dlg = new FolderDetailsWindow(NameExists)
+            {
+                Title = SelectedFolder == null ? "Dodaj nowy folder" : $"Dodaj podfolder w '{SelectedFolder.Name}'"
+            };
 
             if (dlg.ShowDialog() != true) return;
 
-            var folder = new Folder { Name = dlg.FolderName };
+            var folder = new Folder
+            {
+                Name = dlg.FolderName,
+                ParentFolderId = SelectedFolder?.Id
+            };
+
             _db.Folders.Add(folder);
             _db.SaveChanges();
 
-            Folders.Add(folder);
+            if (SelectedFolder == null)
+            {
+                Folders.Add(folder);
+            }
+            else
+            {
+                SelectedFolder.Subfolders.Add(folder);
+            }
+
             SelectedFolder = folder;
         }
         private void EditFolder()
@@ -516,6 +533,7 @@ namespace Notatnik.ViewModels
             bool NameExists(string name) =>
                 _db.Folders.Any(f =>
                       f.Id != SelectedFolder.Id &&
+                      f.ParentFolderId == SelectedFolder.ParentFolderId &&
                       f.Name.ToLower() == name.ToLower());
 
             var dlg = new FolderDetailsWindow(NameExists)
@@ -535,53 +553,84 @@ namespace Notatnik.ViewModels
         {
             if (folder == null) return;
 
-            var ask = MessageBox.Show($"Czy na pewno usunąć „{folder.Name}”? Usunięte zostaną również notatki zawarte w tym folderze.",
+            var ask = MessageBox.Show($"Czy na pewno usunąć „{folder.Name}”? Usunięte zostaną również wszystkie podfoldery i notatki.",
                                       "Potwierdź usunięcie",
                                       MessageBoxButton.YesNo,
                                       MessageBoxImage.Warning);
 
             if (ask != MessageBoxResult.Yes) return;
 
-            _db.Folders.Remove(folder);
+            DeleteFolderRecursive(folder);
+
+            if (folder.ParentFolderId == null)
+            {
+                Folders.Remove(folder);
+            }
+            else
+            {
+                var parent = _db.Folders.Include(f => f.Subfolders)
+                                       .FirstOrDefault(f => f.Id == folder.ParentFolderId);
+                parent?.Subfolders.Remove(folder);
+            }
+
             _db.SaveChanges();
-            Folders.Remove(folder);
+
+            if (SelectedFolder == folder)
+                SelectedFolder = null;
         }
+
+        private void DeleteFolderRecursive(Folder folder)
+        {
+            var notes = _db.Notes.Where(n => n.FolderId == folder.Id).ToList();
+            _db.Notes.RemoveRange(notes);
+
+            var subfolders = _db.Folders.Include(f => f.Subfolders)
+                                       .Where(f => f.ParentFolderId == folder.Id)
+                                       .ToList();
+
+            foreach (var subfolder in subfolders)
+            {
+                DeleteFolderRecursive(subfolder);
+            }
+
+            _db.Folders.Remove(folder);
+        }
+
         private void DeleteMarkedFolders()
         {
-            var markedFolders = Folders.Where(f => f.IsMarkedForDeletion).ToList();
+            var markedFolders = GetAllFoldersRecursive(Folders)
+                                .Where(f => f.IsMarkedForDeletion)
+                                .ToList();
+
             if (!markedFolders.Any()) return;
 
-            var wynik = MessageBox.Show(
-                $"Czy na pewno chcesz usunąć {markedFolders.Count} zaznaczon{(markedFolders.Count == 1 ? "y" : "e")} folder(y) wraz z całą zawartością?",
+            var wynik = MessageBox.Show($"Czy na pewno chcesz usunąć {markedFolders.Count} zaznaczon{(markedFolders.Count == 1 ? "y" : (markedFolders.Count > 1 && markedFolders.Count < 5 ? "e" : "ych"))} folder{(markedFolders.Count == 1 ? "" : (markedFolders.Count > 1 && markedFolders.Count < 5 ? "y" : "ów"))}?",
                 "Potwierdź usunięcie",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning);
 
             if (wynik != MessageBoxResult.Yes) return;
 
-            foreach (var folder in markedFolders)
+            var foldersByLevel = markedFolders.GroupBy(f => f.ParentFolderId)
+                                            .OrderBy(g => g.Key == null ? 0 : 1);
+
+            foreach (var group in foldersByLevel)
             {
-                DeleteFolderRecursive(folder);
-                _db.Folders.Remove(folder);
-                Folders.Remove(folder);
+                foreach (var folder in group.ToList())
+                {
+                    DeleteFolderRecursive(folder);
+
+                    if (folder.ParentFolderId == null)
+                    {
+                        Folders.Remove(folder);
+                    }
+                }
             }
 
             _db.SaveChanges();
 
             if (!Folders.Contains(SelectedFolder))
                 SelectedFolder = Folders.FirstOrDefault();
-        }
-        private void DeleteFolderRecursive(Folder folder)
-        {
-            var notesInFolder = _db.Notes.Where(n => n.FolderId == folder.Id).ToList();
-            foreach (var n in notesInFolder)
-                _db.Notes.Remove(n);
-
-            var subfolders = _db.Folders.Where(f => f.ParentFolderId == folder.Id).ToList();
-            foreach (var sub in subfolders)
-                DeleteFolderRecursive(sub);
-
-            _db.Folders.Remove(folder);
         }
 
         private void DeleteMarkedItems()
@@ -661,6 +710,19 @@ namespace Notatnik.ViewModels
                 doc.Name = "NotePrintDocument";
                 printDialog.PrintDocument(((System.Windows.Documents.IDocumentPaginatorSource)doc)
                                           .DocumentPaginator, "Drukowanie notatki");
+            }
+        }
+
+        private IEnumerable<Folder> GetAllFoldersRecursive(IEnumerable<Folder> folders)
+        {
+            foreach (var folder in folders)
+            {
+                yield return folder;
+
+                foreach (var subfolder in GetAllFoldersRecursive(folder.Subfolders))
+                {
+                    yield return subfolder;
+                }
             }
         }
 

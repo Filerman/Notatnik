@@ -16,7 +16,6 @@ namespace Notatnik.ViewModels
         private readonly AppDbContext _db;
         private readonly MainViewModel _mainVm;
 
-        /* ─── FILTRY ─────────────────────────────────────────── */
         private bool _filterTitle = true;
         private bool _filterFolder = true;
         private bool _filterContent = true;

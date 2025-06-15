@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -11,11 +12,13 @@ namespace Notatnik.Models
 
         public int? ParentFolderId { get; set; }
         public Folder ParentFolder { get; set; }
-        public List<Folder> Subfolders { get; set; } = new List<Folder>();
 
-        public List<Note> Notes { get; set; } = new List<Note>();
+        public ICollection<Folder> Subfolders { get; set; } = new ObservableCollection<Folder>();
+        public ICollection<Note> Notes { get; set; } = new ObservableCollection<Note>();
 
         private bool _isMarkedForDeletion = false;
+        private bool _isSelected;
+
 
         [NotMapped]
         public bool IsMarkedForDeletion
@@ -27,6 +30,19 @@ namespace Notatnik.Models
                 {
                     _isMarkedForDeletion = value;
                     OnPropertyChanged(nameof(IsMarkedForDeletion));
+                }
+            }
+        }
+        [NotMapped]
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set
+            {
+                if (_isSelected != value)
+                {
+                    _isSelected = value;
+                    OnPropertyChanged(nameof(IsSelected));
                 }
             }
         }

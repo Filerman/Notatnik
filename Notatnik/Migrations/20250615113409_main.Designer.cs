@@ -11,8 +11,8 @@ using Notatnik.Data;
 namespace Notatnik.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250602193457_wszystkodziala")]
-    partial class wszystkodziala
+    [Migration("20250615113409_main")]
+    partial class main
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -141,7 +141,8 @@ namespace Notatnik.Migrations
                 {
                     b.HasOne("Notatnik.Models.Folder", "ParentFolder")
                         .WithMany("Subfolders")
-                        .HasForeignKey("ParentFolderId");
+                        .HasForeignKey("ParentFolderId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ParentFolder");
                 });

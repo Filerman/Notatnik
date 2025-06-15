@@ -138,7 +138,8 @@ namespace Notatnik.Migrations
                 {
                     b.HasOne("Notatnik.Models.Folder", "ParentFolder")
                         .WithMany("Subfolders")
-                        .HasForeignKey("ParentFolderId");
+                        .HasForeignKey("ParentFolderId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ParentFolder");
                 });

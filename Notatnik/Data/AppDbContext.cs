@@ -41,11 +41,12 @@ namespace Notatnik.Data
                         .WithOne(n => n.Folder)
                         .HasForeignKey(n => n.FolderId);
 
-            // Folder hierarchy (self-referencing)
+            // Folder - hierarchia
             modelBuilder.Entity<Folder>()
                         .HasMany(f => f.Subfolders)
                         .WithOne(f => f.ParentFolder)
-                        .HasForeignKey(f => f.ParentFolderId);
+                        .HasForeignKey(f => f.ParentFolderId)
+                        .OnDelete(DeleteBehavior.Restrict);
 
             // ChecklistItem <-> Note (one-to-many)
             modelBuilder.Entity<ChecklistItem>()
