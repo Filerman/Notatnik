@@ -35,10 +35,8 @@
             <MenuItem Header="|" IsEnabled="False" Focusable="False"/>
 
             <MenuItem Header="_Statystyki">
-                <MenuItem Header="Dane" />
                 <MenuItem Header="Wykres…" Icon="📊"
                           Command="{Binding OpenChartsCommand}" />
-                <MenuItem Header="Historia" />
             </MenuItem>
         </Menu>
 
@@ -51,6 +49,7 @@
                 <Separator/>
                 <Button Content="📁" ToolTip="Nowy folder"             Command="{Binding AddFolderCommand}" />
                 <Separator/>
+                <Button Content="📊" ToolTip="Statystyka"            Command="{Binding OpenChartsCommand}" />
                 <Button Content="🔍" ToolTip="Wyszukiwanie"            Command="{Binding SearchCommand}" />
                 <Button Content="🖨" ToolTip="Drukuj"                  Command="{Binding PrintCommand}" />
                 <Separator/>
