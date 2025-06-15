@@ -207,15 +207,13 @@
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
 
-                            <GridViewColumn Width="170">
+                            <GridViewColumn Width="150">
                                 <GridViewColumn.Header>
-                                    <!-- kliknięcie = sortowanie po TagList -->
                                     <GridViewColumnHeader Content="Tagi"
                               Command="{Binding SetSortCommand}"
                               CommandParameter="TagList"/>
                                 </GridViewColumn.Header>
 
-                                <!-- ***** widok komórek zostaje bez zmian ***** -->
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <ItemsControl ItemsSource="{Binding Tags}">

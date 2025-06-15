@@ -54,7 +54,7 @@
                                Margin="0,0,10,0"/>
                     <TextBox Text="{Binding Note.Title, UpdateSourceTrigger=PropertyChanged}"
              Height="22"
-             Width="600"
+             Width="400"
              MaxLength="60"/>
                 </StackPanel>
 

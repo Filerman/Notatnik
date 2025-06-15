@@ -47,13 +47,6 @@
                     <CheckBox Content="Folder" Margin="5" IsChecked="{Binding SortByFolder}"/>
                     <CheckBox Content="Treść" Margin="5" IsChecked="{Binding SortByContent}"/>
                     <CheckBox Content="Tagi" Margin="5" IsChecked="{Binding SortByTags}"/>
-
-                    <Button Content="Zastosuj" 
-                    Width="80"
-                    Height="25"
-                    Margin="10,0,0,0" 
-                    Command="{Binding ApplySortingCommand}"
-                    ToolTip="Zastosuj wybrane kryteria sortowania"/>
                 </StackPanel>
             </GroupBox>
         </StackPanel>
