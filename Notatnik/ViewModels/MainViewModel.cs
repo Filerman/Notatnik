@@ -29,11 +29,11 @@ namespace Notatnik.ViewModels
 
         public ICommand MoveNoteCommand { get; }
         public ICommand MoveMarkedNotesCommand { get; }
-        public ICommand MoveMarkedOrSelectedNoteCommand => new RelayCommand(_ => MoveMarkedOrSelected(), _ => Notes.Any(n => n.IsMarkedForDeletion) || SingleSelectedNote != null);
+        public ICommand MoveMarkedOrSelectedNoteCommand => new RelayCommand(_ => MoveMarkedOrSelected(), _ => (Notes.Any(n => n.IsMarkedForDeletion) || SingleSelectedNote != null) && !Folders.Any(f => f.IsMarkedForDeletion));
 
         public ICommand CopyNoteCommand { get; }
         public ICommand CopyMarkedNotesCommand { get; }
-        public ICommand CopyMarkedOrSelectedNotesCommand => new RelayCommand(_ => CopyMarkedOrSelected(), _ => Notes.Any(n => n.IsMarkedForDeletion) || SingleSelectedNote != null);
+        public ICommand CopyMarkedOrSelectedNotesCommand => new RelayCommand(_ => CopyMarkedOrSelected(), _ => (Notes.Any(n => n.IsMarkedForDeletion) || SingleSelectedNote != null) && !Folders.Any(f => f.IsMarkedForDeletion));
 
         public ICommand AddFolderCommand { get; }
         public ICommand EditFolderCommand { get; }
@@ -42,7 +42,6 @@ namespace Notatnik.ViewModels
 
         public ICommand DeleteMarkedItemsCommand { get; }
         public ICommand DeleteMarkedOrSelectedItemsCommand => new RelayCommand(_ => DeleteMarkedOrSelected(), _ => Notes.Any(n => n.IsMarkedForDeletion) || SingleSelectedNote != null);
-
 
         public ICommand SearchCommand { get; }
         public ICommand PrintCommand { get; }
