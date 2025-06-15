@@ -13,37 +13,39 @@ namespace Notatnik.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged
     {
-        // Sortowanie
-        private string _sortField = "Title";
-        private bool _ascending = true;
-        public ICommand SetSortCommand { get; }
-
-
-        public ICollectionView NotesView { get; }          
-
-
         private readonly AppDbContext _db;
         public ObservableCollection<Folder> Folders { get; }
         public ObservableCollection<Note> Notes { get; }
 
-        public ICommand AddNoteCommand { get; }
-        public ICommand EditNoteCommand { get; }
-        public ICommand DeleteMarkedNotesCommand { get; }
-        public ICommand AddFolderCommand { get; }
-        public ICommand DeleteNoteCommand { get; }
-        public ICommand DeleteMarkedFoldersCommand { get; }
-        public ICommand EditFolderCommand { get; }
+        public ICommand SetSortCommand { get; }
         public ICommand AddTextNoteCommand { get; }
         public ICommand AddCheckboxNoteCommand { get; }
         public ICommand AddLongNoteCommand { get; }
+
+        public ICommand EditNoteCommand { get; }
+
+        public ICommand DeleteNoteCommand { get; }
+        public ICommand DeleteMarkedNotesCommand { get; }
+
+        public ICommand MoveNoteCommand { get; }
+        public ICommand MoveMarkedNotesCommand { get; }
+        public ICommand MoveMarkedOrSelectedNoteCommand => new RelayCommand(_ => MoveMarkedOrSelected(), _ => Notes.Any(n => n.IsMarkedForDeletion) || SingleSelectedNote != null);
+
+        public ICommand CopyNoteCommand { get; }
+        public ICommand CopyMarkedNotesCommand { get; }
+        public ICommand CopyMarkedOrSelectedNotesCommand => new RelayCommand(_ => CopyMarkedOrSelected(), _ => Notes.Any(n => n.IsMarkedForDeletion) || SingleSelectedNote != null);
+
+        public ICommand AddFolderCommand { get; }
+        public ICommand EditFolderCommand { get; }
+        public ICommand DeleteFolderCommand { get; }
+        public ICommand DeleteMarkedFoldersCommand { get; }
+
+        public ICommand DeleteMarkedItemsCommand { get; }
+        public ICommand DeleteMarkedOrSelectedItemsCommand => new RelayCommand(_ => DeleteMarkedOrSelected(), _ => Notes.Any(n => n.IsMarkedForDeletion) || SingleSelectedNote != null);
+
+
         public ICommand SearchCommand { get; }
         public ICommand PrintCommand { get; }
-        public ICommand MoveNoteCommand { get; }
-        public ICommand CopyNoteCommand { get; }
-        public ICommand DeleteFolderCommand { get; }
-        public ICommand DeleteMarkedItemsCommand { get; }
-        public ICommand MoveMarkedNotesCommand { get; }
-        public ICommand CopyMarkedNotesCommand { get; }
 
         private Note _singleSelectedNote;
         public Note SingleSelectedNote
@@ -73,6 +75,9 @@ namespace Notatnik.ViewModels
                 }
             }
         }
+        private string _sortField = "Title";
+        private bool _ascending = true;
+        public ICollectionView NotesView { get; }
 
         public MainViewModel()
         {
@@ -385,6 +390,18 @@ namespace Notatnik.ViewModels
                 LoadNotes();
             }
         }
+        private void MoveMarkedOrSelected()
+        {
+            var markedNotes = Notes.Where(n => n.IsMarkedForDeletion).ToList();
+            if (markedNotes.Any())
+            {
+                MoveMarkedNotes();
+            }
+            else if (SingleSelectedNote != null)
+            {
+                MoveNote(SingleSelectedNote);
+            }
+        }
 
         private void CopyNote(Note source)
         {
@@ -463,6 +480,18 @@ namespace Notatnik.ViewModels
 
             _db.SaveChanges();
             if (targetFolder.Id == SelectedFolder?.Id) LoadNotes();
+        }
+        private void CopyMarkedOrSelected()
+        {
+            var markedNotes = Notes.Where(n => n.IsMarkedForDeletion).ToList();
+            if (markedNotes.Any())
+            {
+                CopyMarkedNotes();
+            }
+            else if (SingleSelectedNote != null)
+            {
+                CopyNote(SingleSelectedNote);
+            }
         }
 
         private void AddFolder()
@@ -587,6 +616,24 @@ namespace Notatnik.ViewModels
 
             if (!Folders.Contains(SelectedFolder))
                 SelectedFolder = Folders.FirstOrDefault();
+        }
+        private void DeleteMarkedOrSelected()
+        {
+            var markedNotes = Notes.Where(n => n.IsMarkedForDeletion).ToList();
+            var markedFolders = Folders.Where(f => f.IsMarkedForDeletion).ToList();
+
+            if (markedNotes.Any() || markedFolders.Any())
+            {
+                DeleteMarkedItems();
+            }
+            else if (SingleSelectedNote != null)
+            {
+                DeleteNote(SingleSelectedNote);
+            }
+            else if (SelectedFolder != null)
+            {
+                DeleteFolder(SelectedFolder);
+            }
         }
 
         private void OpenSearchWindow()
