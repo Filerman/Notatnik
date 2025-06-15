@@ -42,6 +42,8 @@ namespace Notatnik.ViewModels
         public ICommand CopyNoteCommand { get; }
         public ICommand DeleteFolderCommand { get; }
         public ICommand DeleteMarkedItemsCommand { get; }
+        public ICommand MoveMarkedNotesCommand { get; }
+        public ICommand CopyMarkedNotesCommand { get; }
 
         private Note _singleSelectedNote;
         public Note SingleSelectedNote
@@ -93,7 +95,9 @@ namespace Notatnik.ViewModels
             DeleteMarkedNotesCommand = new RelayCommand(_ => DeleteMarkedNotes(), _ => Notes.Any(n => n.IsMarkedForDeletion));
 
             MoveNoteCommand = new RelayCommand(p => MoveNote(p as Note), p => p is Note);
+            MoveMarkedNotesCommand = new RelayCommand(_ => MoveMarkedNotes(), _ => Notes.Any(n => n.IsMarkedForDeletion));
             CopyNoteCommand = new RelayCommand(p => CopyNote(p as Note), p => p is Note);
+            CopyMarkedNotesCommand = new RelayCommand(_ => CopyMarkedNotes(), _ => Notes.Any(n => n.IsMarkedForDeletion));
 
             AddFolderCommand = new RelayCommand(_ => AddFolder());
             EditFolderCommand = new RelayCommand(_ => EditFolder(), _ => SelectedFolder != null);
@@ -167,7 +171,6 @@ namespace Notatnik.ViewModels
                 Notes.Add(note);
             }
 
-            // natychmiast sortuj wg bieżących ustawień
             ApplySort(_sortField);
         }
 
@@ -315,7 +318,7 @@ namespace Notatnik.ViewModels
             if (!markedNotes.Any()) return;
 
             var wynik = MessageBox.Show(
-                $"Czy na pewno chcesz usunąć {markedNotes.Count} zaznaczon{(markedNotes.Count == 1 ? "ą" : "e")} notatkę(i)?",
+                $"Czy na pewno chcesz usunąć {markedNotes.Count} zaznaczon{(markedNotes.Count == 1 ? "ą" : (markedNotes.Count > 1 && markedNotes.Count < 5 ? "e" : "ych"))} notat{(markedNotes.Count == 1 ? "kę" : (markedNotes.Count > 1 && markedNotes.Count < 5 ? "ki" : "ek"))}?",
                 "Potwierdź usunięcie",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
@@ -329,7 +332,7 @@ namespace Notatnik.ViewModels
             }
             _db.SaveChanges();
         }
-
+        
         private void MoveNote(Note noteToMove)
         {
             if (noteToMove == null) return;
@@ -349,6 +352,40 @@ namespace Notatnik.ViewModels
             _db.SaveChanges();
             LoadNotes();
         }
+        private void MoveMarkedNotes()
+        {
+            var markedNotes = Notes.Where(n => n.IsMarkedForDeletion).ToList();
+            if (!markedNotes.Any()) return;
+
+            var wynik = MessageBox.Show(
+                $"Czy na pewno chcesz przenieść {markedNotes.Count} zaznaczon{(markedNotes.Count == 1 ? "ą" : (markedNotes.Count > 1 && markedNotes.Count < 5 ? "e" : "ych"))} notat{(markedNotes.Count == 1 ? "kę" : (markedNotes.Count > 1 && markedNotes.Count < 5 ? "ki" : "ek"))}?",
+                "Potwierdź przeniesienie",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (wynik != MessageBoxResult.Yes) return;
+
+            var dlg = new MoveNoteWindow(_db, markedNotes[0].FolderId)
+            {
+                Owner = Application.Current.MainWindow,
+                Title = $"Przenieś notat{(markedNotes.Count == 1 ? "kę" : (markedNotes.Count > 1 && markedNotes.Count < 5 ? "ki" : "ek"))} do folderu"
+            };
+
+            if (dlg.ShowDialog() != true) return;
+
+            var targetFolder = dlg.SelectedFolder;
+
+            foreach (var note in markedNotes)
+            {
+                if (targetFolder == null || targetFolder.Id == note.FolderId) return;
+
+                note.FolderId = targetFolder.Id;
+
+                _db.SaveChanges();
+                LoadNotes();
+            }
+        }
+
         private void CopyNote(Note source)
         {
             if (source == null) return;
@@ -382,10 +419,54 @@ namespace Notatnik.ViewModels
 
             if (target.Id == SelectedFolder?.Id) LoadNotes();
         }
+        private void CopyMarkedNotes()
+        {
+            var markedNotes = Notes.Where(n => n.IsMarkedForDeletion).ToList();
+            if (!markedNotes.Any()) return;
+
+            var wynik = MessageBox.Show(
+                $"Czy na pewno chcesz skopiować {markedNotes.Count} zaznaczon{(markedNotes.Count == 1 ? "ą" : (markedNotes.Count > 1 && markedNotes.Count < 5 ? "e" : "ych"))} notat{(markedNotes.Count == 1 ? "kę" : (markedNotes.Count > 1 && markedNotes.Count < 5 ? "ki" : "ek"))}?",
+                "Potwierdź kopiowanie",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (wynik != MessageBoxResult.Yes) return;
+
+            var dlg = new MoveNoteWindow(_db, markedNotes[0].FolderId)
+            {
+                Owner = Application.Current.MainWindow,
+                Title = $"Skopiuj notat{(markedNotes.Count == 1 ? "kę" : (markedNotes.Count > 1 && markedNotes.Count < 5 ? "ki" : "ek"))} do folderu"
+            };
+
+            if (dlg.ShowDialog() != true) return;
+            var targetFolder = dlg.SelectedFolder;
+            if (targetFolder == null) return;
+
+            foreach (var note in markedNotes)
+            {
+                var copy = new Note
+                {
+                    Title = $"{note.Title} - kopia",
+                    Content = note.Content,
+                    Type = note.Type,
+                    CreatedAt = DateTime.Now,
+                    ModifiedAt = DateTime.Now,
+                    FolderId = targetFolder.Id,
+                    Tags = note.Tags.ToList()
+                };
+
+                foreach (var item in note.ChecklistItems)
+                    copy.ChecklistItems.Add(new ChecklistItem { Text = item.Text, IsChecked = item.IsChecked });
+
+                _db.Notes.Add(copy);
+            }
+
+            _db.SaveChanges();
+            if (targetFolder.Id == SelectedFolder?.Id) LoadNotes();
+        }
 
         private void AddFolder()
         {
-            // delegat: TRUE gdy istnieje folder o tej samej nazwie (bez względu na wielkość liter)
             bool NameExists(string name) =>
                 _db.Folders.Any(f => f.Name.ToLower() == name.ToLower());
 
@@ -406,7 +487,7 @@ namespace Notatnik.ViewModels
 
             bool NameExists(string name) =>
                 _db.Folders.Any(f =>
-                      f.Id != SelectedFolder.Id &&               // pomijamy aktualny
+                      f.Id != SelectedFolder.Id &&
                       f.Name.ToLower() == name.ToLower());
 
             var dlg = new FolderDetailsWindow(NameExists)

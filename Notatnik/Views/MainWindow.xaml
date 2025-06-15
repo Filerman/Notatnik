@@ -52,8 +52,8 @@
                 <Button Content="🔍" ToolTip="Wyszukiwanie"            Command="{Binding SearchCommand}" />
                 <Button Content="🖨" ToolTip="Drukuj"                  Command="{Binding PrintCommand}" />
                 <Separator/>
-                <Button Content="⧉" ToolTip="Kopiuj notatkę"           Command="{Binding CopyNoteCommand}" />
-                <Button Content="🗂" ToolTip="Zmień folder"            Command="{Binding MoveNoteCommand}" />
+                <Button Content="⧉" ToolTip="Kopiuj notatki"           Command="{Binding CopyMarkedNotesCommand}" />
+                <Button Content="🗂" ToolTip="Zmień folder"            Command="{Binding MoveMarkedNotesCommand}" />
                 <Button Content="🗑️" ToolTip="Usuń zaznaczone"         Command="{Binding DeleteMarkedItemsCommand}" />
             </ToolBar>
         </ToolBarTray>
@@ -161,12 +161,6 @@
                                       CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu},
                                                                  Path=PlacementTarget.SelectedItem}"/>
 
-                            <Separator/>
-
-                            <MenuItem Header="Właściwości" Icon="ℹ️"
-                                      Command="{Binding NotePropertiesCommand}"
-                                      CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu},
-                                                                 Path=PlacementTarget.SelectedItem}"/>
                         </ContextMenu>
                     </ListView.ContextMenu>
 
