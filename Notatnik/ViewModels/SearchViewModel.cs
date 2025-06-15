@@ -16,7 +16,35 @@ namespace Notatnik.ViewModels
         private readonly AppDbContext _db;
         private readonly MainViewModel _mainVm;
 
-        // Aktualny tekst wpisany w polu wyszukiwania
+        /* ─── FILTRY ─────────────────────────────────────────── */
+        private bool _filterTitle = true;
+        private bool _filterFolder = true;
+        private bool _filterContent = true;
+        private bool _filterTags = true;
+
+        public bool SortByTitle
+        {
+            get => _filterTitle;
+            set { _filterTitle = value; OnPropertyChanged(nameof(SortByTitle)); }
+        }
+        public bool SortByFolder
+        {
+            get => _filterFolder;
+            set { _filterFolder = value; OnPropertyChanged(nameof(SortByFolder)); }
+        }
+        public bool SortByContent
+        {
+            get => _filterContent;
+            set { _filterContent = value; OnPropertyChanged(nameof(SortByContent)); }
+        }
+        public bool SortByTags
+        {
+            get => _filterTags;
+            set { _filterTags = value; OnPropertyChanged(nameof(SortByTags)); }
+        }
+        /* ────────────────────────────────────────────────────── */
+
+        /* ─── Tekst wyszukiwany ─── */
         private string _searchText;
         public string SearchText
         {
@@ -28,14 +56,13 @@ namespace Notatnik.ViewModels
                     _searchText = value;
                     OnPropertyChanged(nameof(SearchText));
                     _searchNotesCommand.RaiseCanExecuteChanged();
+                    _clearCommand.RaiseCanExecuteChanged();
                 }
             }
         }
 
-        // Kolekcja wyników wyszukiwania (lista notatek)
-        public ObservableCollection<Note> SearchResults { get; } = new ObservableCollection<Note>();
-
-        // Zaznaczona w ListView notatka
+        /* ─── Wyniki i zaznaczenie ─── */
+        public ObservableCollection<Note> SearchResults { get; } = new();
         private Note _selectedResult;
         public Note SelectedResult
         {
@@ -51,14 +78,17 @@ namespace Notatnik.ViewModels
             }
         }
 
-        // Komendy
-        private RelayCommand _searchNotesCommand;
+        /* ─── Komendy ─── */
+        private readonly RelayCommand _searchNotesCommand;
         public ICommand SearchNotesCommand => _searchNotesCommand;
 
-        private RelayCommand _clearCommand;
+        private readonly RelayCommand _clearCommand;
         public ICommand ClearCommand => _clearCommand;
 
-        private RelayCommand _openSelectedNoteCommand;
+        private readonly RelayCommand _applyFilterCommand;
+        public ICommand ApplySortingCommand => _applyFilterCommand;   // xaml już używa tej nazwy
+
+        private readonly RelayCommand _openSelectedNoteCommand;
         public ICommand OpenSelectedNoteCommand => _openSelectedNoteCommand;
 
         public SearchViewModel(AppDbContext db, MainViewModel mainVm)
@@ -68,47 +98,54 @@ namespace Notatnik.ViewModels
 
             _searchNotesCommand = new RelayCommand(_ => DoSearch(), _ => CanSearch());
             _clearCommand = new RelayCommand(_ => ClearSearch(), _ => !string.IsNullOrWhiteSpace(SearchText));
+            _applyFilterCommand = new RelayCommand(_ => DoSearch());          // zawsze dostępna
             _openSelectedNoteCommand = new RelayCommand(_ => OpenSelectedNote(), _ => SelectedResult != null);
         }
 
-        private bool CanSearch()
-        {
-            return !string.IsNullOrWhiteSpace(SearchText);
-        }
+        /* ────────────────────────────────────────────────────── */
+        private bool CanSearch() => !string.IsNullOrWhiteSpace(SearchText);
 
         private void DoSearch()
         {
             SearchResults.Clear();
 
-            var query = SearchText.Trim().ToLower();
+            if (string.IsNullOrWhiteSpace(SearchText))
+                return;
+
+            // jeśli user odznaczy wszystkie filtry – traktuj tak, jakby włączył wszystkie
+            bool allOff = !SortByTitle && !SortByFolder && !SortByContent && !SortByTags;
+
+            string q = SearchText.Trim().ToLower();
 
             try
             {
-                var matches = _db.Notes
+                var results = _db.Notes
                                  .Include(n => n.Tags)
                                  .Include(n => n.ChecklistItems)
                                  .Include(n => n.Folder)
                                  .Where(n =>
-                                     // 1) Tytuł
-                                     EF.Functions.Like(n.Title.ToLower(), $"%{query}%")
-                                     // LUB 2) Content (dla Regular i LongFormat)
-                                     || EF.Functions.Like(n.Content.ToLower(), $"%{query}%")
-                                     // LUB 3) którykolwiek tag
-                                     || n.Tags.Any(t => t.Name.ToLower().Contains(query))
-                                     // LUB 4) którykolwiek element checklisty
-                                     || n.ChecklistItems.Any(ci => ci.Text.ToLower().Contains(query))
+                                     // Tytuł
+                                     ((SortByTitle || allOff) && EF.Functions.Like(n.Title.ToLower(), $"%{q}%"))
+                                     ||
+                                     // Folder
+                                     ((SortByFolder || allOff) && n.Folder.Name.ToLower().Contains(q))
+                                     ||
+                                     // Treść (Regular / LongFormat)
+                                     ((SortByContent || allOff) && EF.Functions.Like(n.Content.ToLower(), $"%{q}%"))
+                                     ||
+                                     // Tagi
+                                     ((SortByTags || allOff) && n.Tags.Any(t => t.Name.ToLower().Contains(q)))
                                  )
                                  .OrderByDescending(n => n.ModifiedAt)
                                  .ToList();
 
-                foreach (var note in matches)
-                {
+                foreach (var note in results)
                     SearchResults.Add(note);
-                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Błąd podczas wyszukiwania:\n{ex.Message}", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Błąd podczas wyszukiwania:\n{ex.Message}",
+                                "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -120,12 +157,13 @@ namespace Notatnik.ViewModels
 
         private void OpenSelectedNote()
         {
-            if (SelectedResult == null) return;
-            _mainVm.OpenNoteForEdit(SelectedResult);
+            if (SelectedResult != null)
+                _mainVm.OpenNoteForEdit(SelectedResult);
         }
 
+        /* ─── INotifyPropertyChanged ─── */
         public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged(string name) =>
+        private void OnPropertyChanged(string name) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }

@@ -131,7 +131,7 @@
 
                 <ListView x:Name="ListViewNotes"
                           Grid.Row="1"
-                          ItemsSource="{Binding Notes}"
+                          ItemsSource="{Binding NotesView}"
                           SelectedItem="{Binding SingleSelectedNote}"
                           SelectionMode="Single"
                           MouseDoubleClick="ListViewNotes_MouseDoubleClick">
@@ -181,7 +181,12 @@
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
 
-                            <GridViewColumn Header="Tytuł" Width="200">
+                            <GridViewColumn Width="160">
+                                <GridViewColumn.Header>
+                                    <GridViewColumnHeader Content="Tytuł"
+                                      Command="{Binding SetSortCommand}"
+                                      CommandParameter="Title"/>
+                                </GridViewColumn.Header>
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Title}" TextWrapping="NoWrap"/>
@@ -189,7 +194,12 @@
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
 
-                            <GridViewColumn Header="Podgląd" Width="300">
+                            <GridViewColumn Width="230">
+                                <GridViewColumn.Header>
+                                    <GridViewColumnHeader Content="Podgląd"
+                              Command="{Binding SetSortCommand}"
+                              CommandParameter="Snippet"/>
+                                </GridViewColumn.Header>
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Snippet}" TextWrapping="NoWrap"/>
@@ -197,7 +207,42 @@
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
 
-                            <GridViewColumn Header="Utworzono" Width="130">
+                            <GridViewColumn Width="170">
+                                <GridViewColumn.Header>
+                                    <!-- kliknięcie = sortowanie po TagList -->
+                                    <GridViewColumnHeader Content="Tagi"
+                              Command="{Binding SetSortCommand}"
+                              CommandParameter="TagList"/>
+                                </GridViewColumn.Header>
+
+                                <!-- ***** widok komórek zostaje bez zmian ***** -->
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ItemsControl ItemsSource="{Binding Tags}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <StackPanel Orientation="Horizontal"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Name}"
+                                   Margin="0,0,5,0"
+                                   Foreground="Gray"
+                                   FontStyle="Italic"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+
+                            <GridViewColumn Width="110">
+                                <GridViewColumn.Header>
+                                    <GridViewColumnHeader Content="Utworzono"
+                                      Command="{Binding SetSortCommand}"
+                                      CommandParameter="CreatedAt"/>
+                                </GridViewColumn.Header>
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding CreatedAt, StringFormat=\{0:yyyy-MM-dd HH:mm\}}"/>
@@ -205,13 +250,19 @@
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
 
-                            <GridViewColumn Header="Zmodyfikowano" Width="140">
+                            <GridViewColumn Width="120">
+                                <GridViewColumn.Header>
+                                    <GridViewColumnHeader Content="Zmodyfikowano"
+                                      Command="{Binding SetSortCommand}"
+                                      CommandParameter="ModifiedAt"/>
+                                </GridViewColumn.Header>
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding ModifiedAt, StringFormat=\{0:yyyy-MM-dd HH:mm\}}"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
+
                         </GridView>
                     </ListView.View>
                 </ListView>

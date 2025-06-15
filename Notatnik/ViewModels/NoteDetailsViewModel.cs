@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows;
+using System.Windows.Documents; 
 using System.Windows.Input;
 using Microsoft.EntityFrameworkCore;
 using Notatnik.Commands;
@@ -99,8 +100,59 @@ namespace Notatnik.ViewModels
 
             RemoveTagCommand = new RelayCommand(o => RemoveTag(o as string), o => o is string);
 
-            SaveCommand = new RelayCommand(_ => OnRequestClose(true));
+            SaveCommand = new RelayCommand(_ =>
+            {
+                if (Validate())
+                    OnRequestClose(true);   // zamknij z DialogResult = true
+            });
             CancelCommand = new RelayCommand(_ => OnRequestClose(false));
+        }
+
+        // WALIDACJA
+        private bool Validate()
+        {
+            // 1) Tytuł
+            var title = (Note.Title ?? "").Trim();
+            if (title.Length == 0)
+            {
+                MessageBox.Show("Tytuł nie może być pusty.",
+                                "Walidacja", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+            if (title.Length > 60)
+            {
+                MessageBox.Show("Tytuł nie może przekraczać 60 znaków.",
+                                "Walidacja", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+
+            // 2) Zawartość zależnie od typu
+            switch (Note.Type)
+            {
+                case NoteType.Regular:
+                    if (string.IsNullOrWhiteSpace(Note.Content))
+                    {
+                        MessageBox.Show("Notatka nie może być pusta.",
+                                        "Walidacja", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return false;
+                    }
+                    break;
+
+                case NoteType.LongFormat:
+            break;
+
+                case NoteType.CheckList:
+                    bool anyItem = ChecklistItems.Any(i => !string.IsNullOrWhiteSpace(i.Text));
+                    if (!anyItem)
+                    {
+                        MessageBox.Show("Lista zadań nie zawiera żadnych pozycji.",
+                                        "Walidacja", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return false;
+                    }
+                    break;
+            }
+
+            return true;   // OK
         }
 
         private void AddItem()
