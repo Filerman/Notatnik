@@ -41,7 +41,7 @@ namespace Notatnik.ViewModels
         public ICommand DeleteMarkedFoldersCommand { get; }
 
         public ICommand DeleteMarkedItemsCommand { get; }
-        public ICommand DeleteMarkedOrSelectedItemsCommand => new RelayCommand(_ => DeleteMarkedOrSelected(), _ => Notes.Any(n => n.IsMarkedForDeletion) || SingleSelectedNote != null);
+        public ICommand DeleteMarkedOrSelectedItemsCommand => new RelayCommand(_ => DeleteMarkedOrSelected(), _ => Notes.Any(n => n.IsMarkedForDeletion) || SingleSelectedNote != null || Folders.Any(n => n.IsMarkedForDeletion) || SelectedFolder != null);
 
         public ICommand SearchCommand { get; }
         public ICommand PrintCommand { get; }
