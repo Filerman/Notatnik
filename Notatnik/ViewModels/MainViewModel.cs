@@ -87,7 +87,7 @@ namespace Notatnik.ViewModels
         {
             _db = new AppDbContextFactory().CreateDbContext(null);
 
-            Folders = new ObservableCollection<Folder>(LoadFullHierarchy());
+            Folders = [.. LoadFullHierarchy()];
 
             Notes = new ObservableCollection<Note>();
             NotesView = CollectionViewSource.GetDefaultView(Notes);
@@ -501,7 +501,7 @@ namespace Notatnik.ViewModels
 
         private void AddFolder(Folder parentFolder)
         {
-            var parentId = parentFolder?.Id;      
+            var parentId = parentFolder?.Id;
 
             bool NameExists(string name) =>
                 _db.Folders.Any(f => f.ParentFolderId == parentId
@@ -515,15 +515,27 @@ namespace Notatnik.ViewModels
             };
             if (dlg.ShowDialog() != true) return;
 
-            var folder = new Folder { Name = dlg.FolderName, ParentFolderId = parentId };
+            var folder = new Folder
+            {
+                Name = dlg.FolderName,
+                ParentFolderId = parentId
+            };
+
             _db.Folders.Add(folder);
             _db.SaveChanges();
 
-            if (parentFolder == null) Folders.Add(folder); 
+            if (parentFolder == null)
+            {
+                Folders.Add(folder);
+            }
+            else
+            {
+                parentFolder.Subfolders.Add(folder);
+            }
+
             SelectedFolder = folder;
         }
 
-        private void AddFolder() => AddFolder(SelectedFolder);
         private void EditFolder()
         {
             if (SelectedFolder == null) return;
