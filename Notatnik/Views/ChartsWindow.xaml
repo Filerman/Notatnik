@@ -1,0 +1,23 @@
+﻿<Window x:Class="Notatnik.Views.ChartsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:oxy="http://oxyplot.org/wpf"
+        Title="Statystyki notatek"
+        Height="600" Width="900">
+    <Grid Margin="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- 1. Notatki wg kategorii -->
+        <oxy:PlotView Grid.Row="0"
+                      Model="{Binding CategoryPlot}"
+                      Margin="4" />
+
+        <!-- 2. Słowa w notatkach -->
+        <oxy:PlotView Grid.Row="1"
+                      Model="{Binding WordCountPlot}"
+                      Margin="4" />
+    </Grid>
+</Window>

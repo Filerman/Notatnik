@@ -15,16 +15,21 @@ namespace Notatnik.Data
                 : base(options)
         {
             Database.EnsureCreated();
-
-            if (!Folders.Any()) 
+            if (!Folders.Any())
             {
-                Folders.Add(new Folder
-                {
-                    Name = "Notatki"
-                });
+                Folders.Add(new Folder { Name = "Notatki" });
                 SaveChanges();
             }
         }
+
+        /// <summary>
+        /// Konstruktor bezparametrowy – używany w ChartsViewModel
+        /// </summary>
+        public AppDbContext()
+            : this(new DbContextOptionsBuilder<AppDbContext>()
+                     .UseSqlite("Data Source=Notatnik.db")
+                     .Options)
+        { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

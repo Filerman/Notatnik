@@ -31,11 +31,13 @@
                 <MenuItem Header="Zamknij" Command="{Binding ExitCommand}" />
             </MenuItem>
 
+
             <MenuItem Header="|" IsEnabled="False" Focusable="False"/>
 
             <MenuItem Header="_Statystyki">
-                <MenuItem Header="Dane"    />
-                <MenuItem Header="Wykres..." />
+                <MenuItem Header="Dane" />
+                <MenuItem Header="Wykres…" Icon="📊"
+                          Command="{Binding OpenChartsCommand}" />
                 <MenuItem Header="Historia" />
             </MenuItem>
         </Menu>

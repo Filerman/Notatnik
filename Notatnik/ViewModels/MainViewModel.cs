@@ -8,6 +8,9 @@ using Notatnik.Commands;
 using Notatnik.Data;
 using Notatnik.Models;
 using Notatnik.Views;
+using OxyPlot;
+using OxyPlot.Axes;
+using OxyPlot.Series;
 
 namespace Notatnik.ViewModels
 {
@@ -45,6 +48,7 @@ namespace Notatnik.ViewModels
 
         public ICommand SearchCommand { get; }
         public ICommand PrintCommand { get; }
+        public ICommand OpenChartsCommand { get; }
 
         private Note _singleSelectedNote;
         public Note SingleSelectedNote
@@ -112,6 +116,7 @@ namespace Notatnik.ViewModels
 
             SearchCommand = new RelayCommand(_ => OpenSearchWindow());
             PrintCommand = new RelayCommand(_ => Print());
+            OpenChartsCommand = new RelayCommand(_ => ShowCharts());
 
             if (Folders.Any())
                 SelectedFolder = Folders.First();
@@ -711,6 +716,15 @@ namespace Notatnik.ViewModels
                 printDialog.PrintDocument(((System.Windows.Documents.IDocumentPaginatorSource)doc)
                                           .DocumentPaginator, "Drukowanie notatki");
             }
+        }
+
+        private void ShowCharts()
+        {
+            var win = new ChartsWindow
+            {
+                DataContext = new ChartsViewModel() 
+            };
+            win.Show();
         }
 
         private IEnumerable<Folder> GetAllFoldersRecursive(IEnumerable<Folder> folders)
