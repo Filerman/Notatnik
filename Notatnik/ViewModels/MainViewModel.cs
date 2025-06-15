@@ -87,8 +87,7 @@ namespace Notatnik.ViewModels
         {
             _db = new AppDbContextFactory().CreateDbContext(null);
 
-            Folders = new ObservableCollection<Folder>(
-                _db.Folders.Include(f => f.Subfolders).ToList());
+            Folders = new ObservableCollection<Folder>(LoadFullHierarchy());
 
             Notes = new ObservableCollection<Note>();
             NotesView = CollectionViewSource.GetDefaultView(Notes);
@@ -719,6 +718,22 @@ namespace Notatnik.ViewModels
                 DataContext = new ChartsViewModel() 
             };
             win.Show();
+        }
+        private IEnumerable<Folder> LoadFullHierarchy()
+        {
+            // Najpierw ładujemy wszystkie foldery (ważne: AsNoTracking dla wydajności)
+            var allFolders = _db.Folders.AsNoTracking().ToList();
+
+            // Budujemy hierarchię
+            var rootFolders = allFolders.Where(f => f.ParentFolderId == null).ToList();
+
+            foreach (var folder in allFolders)
+            {
+                folder.Subfolders = new ObservableCollection<Folder>(
+                    allFolders.Where(f => f.ParentFolderId == folder.Id).ToList());
+            }
+
+            return rootFolders;
         }
 
         private IEnumerable<Folder> GetAllFoldersRecursive(IEnumerable<Folder> folders)

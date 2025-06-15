@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Notatnik.Models
@@ -8,12 +9,16 @@ namespace Notatnik.Models
     public class Folder : INotifyPropertyChanged
     {
         public int Id { get; set; }
+
+        [Required]
         public string Name { get; set; }
 
         public int? ParentFolderId { get; set; }
-        public Folder ParentFolder { get; set; }
 
-        public ICollection<Folder> Subfolders { get; set; } = new ObservableCollection<Folder>();
+        [ForeignKey("ParentFolderId")]
+        public virtual Folder ParentFolder { get; set; }
+
+        public virtual ICollection<Folder> Subfolders { get; set; } = new ObservableCollection<Folder>();
         public ICollection<Note> Notes { get; set; } = new ObservableCollection<Note>();
 
         private bool _isMarkedForDeletion = false;

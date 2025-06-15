@@ -11,7 +11,7 @@ using Notatnik.Data;
 namespace Notatnik.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250615113409_main")]
+    [Migration("20250615150840_main")]
     partial class main
     {
         /// <inheritdoc />
