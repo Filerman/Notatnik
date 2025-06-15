@@ -39,6 +39,7 @@ namespace Notatnik.ViewModels
         public ICommand CopyMarkedOrSelectedNotesCommand => new RelayCommand(_ => CopyMarkedOrSelected(), _ => (Notes.Any(n => n.IsMarkedForDeletion) || SingleSelectedNote != null) && !Folders.Any(f => f.IsMarkedForDeletion));
 
         public ICommand AddFolderCommand { get; }
+        public ICommand AddSubfolderCommand { get; }
         public ICommand EditFolderCommand { get; }
         public ICommand DeleteFolderCommand { get; }
         public ICommand DeleteMarkedFoldersCommand { get; }
@@ -107,7 +108,8 @@ namespace Notatnik.ViewModels
             CopyNoteCommand = new RelayCommand(p => CopyNote(p as Note), p => p is Note);
             CopyMarkedNotesCommand = new RelayCommand(_ => CopyMarkedNotes(), _ => Notes.Any(n => n.IsMarkedForDeletion));
 
-            AddFolderCommand = new RelayCommand(_ => AddFolder());
+            AddFolderCommand = new RelayCommand(_ => AddFolder(null));
+            AddSubfolderCommand = new RelayCommand(p => AddFolder(p as Folder));
             EditFolderCommand = new RelayCommand(_ => EditFolder(), _ => SelectedFolder != null);
             DeleteFolderCommand = new RelayCommand(_ => DeleteFolder(SelectedFolder), _ => SelectedFolder != null);
             DeleteMarkedFoldersCommand = new RelayCommand(_ => DeleteMarkedFolders(), _ => Folders.Any(f => f.IsMarkedForDeletion));
@@ -498,39 +500,31 @@ namespace Notatnik.ViewModels
             }
         }
 
-        private void AddFolder()
+        private void AddFolder(Folder parentFolder)
         {
+            var parentId = parentFolder?.Id;      
+
             bool NameExists(string name) =>
-                _db.Folders.Any(f => f.ParentFolderId == SelectedFolder.Id &&
-                                    f.Name.ToLower() == name.ToLower());
+                _db.Folders.Any(f => f.ParentFolderId == parentId
+                                  && f.Name.ToLower() == name.ToLower());
 
             var dlg = new FolderDetailsWindow(NameExists)
             {
-                Title = SelectedFolder == null ? "Dodaj nowy folder" : $"Dodaj podfolder w '{SelectedFolder.Name}'"
+                Title = parentFolder == null
+                        ? "Dodaj nowy folder"
+                        : $"Dodaj podfolder w „{parentFolder.Name}”"
             };
-
             if (dlg.ShowDialog() != true) return;
 
-            var folder = new Folder
-            {
-                Name = dlg.FolderName,
-                ParentFolderId = SelectedFolder?.Id
-            };
-
+            var folder = new Folder { Name = dlg.FolderName, ParentFolderId = parentId };
             _db.Folders.Add(folder);
             _db.SaveChanges();
 
-            if (SelectedFolder == null)
-            {
-                Folders.Add(folder);
-            }
-            else
-            {
-                SelectedFolder.Subfolders.Add(folder);
-            }
-
+            if (parentFolder == null) Folders.Add(folder); 
             SelectedFolder = folder;
         }
+
+        private void AddFolder() => AddFolder(SelectedFolder);
         private void EditFolder()
         {
             if (SelectedFolder == null) return;

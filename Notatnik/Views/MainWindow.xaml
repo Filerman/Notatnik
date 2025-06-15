@@ -83,41 +83,32 @@
                 </StackPanel>
 
                 <TreeView x:Name="TreeViewFolders"
-                          Grid.Row="1"
-                          ItemsSource="{Binding Folders}"
-                          SelectedItemChanged="TreeViewFolders_SelectedItemChanged">
+          Grid.Row="1"
+          ItemsSource="{Binding Folders}"
+          SelectedItemChanged="TreeViewFolders_SelectedItemChanged"
+          ContextMenuOpening="TreeViewFolders_ContextMenuOpening">
+                    <TreeView.Resources>
+                        <ContextMenu x:Key="FolderContextMenu">
+                            <MenuItem Header="Edytuj" Icon="✏️"
+                      Command="{Binding DataContext.EditFolderCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                      CommandParameter="{Binding}"/>
+                            <MenuItem Header="Dodaj podfolder" Icon="📁"
+                      Command="{Binding DataContext.AddSubfolderCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                      CommandParameter="{Binding}"/>
+                            <MenuItem Header="Usuń" Icon="🗑️"
+                      Command="{Binding DataContext.DeleteFolderCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                      CommandParameter="{Binding}"/>
+                            <MenuItem Header="Przenieś do..." Icon="📂"
+                      Command="{Binding DataContext.MoveFolderCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                      CommandParameter="{Binding}"/>
+                        </ContextMenu>
+                    </TreeView.Resources>
+
                     <TreeView.ItemContainerStyle>
                         <Style TargetType="{x:Type TreeViewItem}">
                             <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
                             <Setter Property="IsExpanded" Value="True"/>
-                            <Setter Property="ContextMenu">
-                                <Setter.Value>
-                                    <ContextMenu>
-                                        <MenuItem Header="Edytuj" Icon="✏️"
-                                                  Command="{Binding EditFolderCommand}"
-                                                  CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu},
-                                            Path=PlacementTarget.SelectedItem}"/>
-                                        <MenuItem Header="Dodaj podfolder" Icon="📁"
-                                                  Command="{Binding AddSubfolderCommand}"
-                                                  CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu},
-                                            Path=PlacementTarget.SelectedItem}"/>
-
-                                        <MenuItem Header="Usuń" Icon="🗑️"
-                                                  Command="{Binding DeleteFolderCommand}"
-                                                  CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu},
-                                            Path=PlacementTarget.SelectedItem}"/>
-
-                                        <MenuItem Header="Usuń zaznaczone" Icon="🗑️"
-                                                  Command="{Binding DeleteMarkedItemsCommand}"/>
-
-                                        <MenuItem Header="Przenieś do folderu..." Icon="📂"
-                                                  Command="{Binding MoveFolderCommand}"
-                                                  CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu},
-                                            Path=PlacementTarget.SelectedItem}"/>
-
-                                    </ContextMenu>
-                                </Setter.Value>
-                            </Setter>
+                            <Setter Property="ContextMenu" Value="{StaticResource FolderContextMenu}"/>
                         </Style>
                     </TreeView.ItemContainerStyle>
 
@@ -125,8 +116,8 @@
                         <HierarchicalDataTemplate ItemsSource="{Binding Subfolders}">
                             <StackPanel Orientation="Horizontal">
                                 <CheckBox IsChecked="{Binding IsMarkedForDeletion, Mode=TwoWay}"
-                                          VerticalAlignment="Center"
-                                          Margin="0,0,5,0"/>
+                          VerticalAlignment="Center"
+                          Margin="0,0,5,0"/>
                                 <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
                             </StackPanel>
                         </HierarchicalDataTemplate>

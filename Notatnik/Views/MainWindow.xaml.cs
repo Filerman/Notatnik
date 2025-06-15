@@ -93,6 +93,35 @@ namespace Notatnik.Views
                 SetFolderSelection(subfolder, select);
             }
         }
+        private void TreeViewFolders_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            var treeView = (TreeView)sender;
+            var source = e.OriginalSource as DependencyObject;
+
+            var treeViewItem = FindAncestor<TreeViewItem>(source);
+            if (treeViewItem != null)
+            {
+                treeViewItem.IsSelected = true;
+                e.Handled = false;
+            }
+            else
+            {
+                e.Handled = true;
+            }
+        }
+
+        private static T FindAncestor<T>(DependencyObject current) where T : DependencyObject
+        {
+            while (current != null)
+            {
+                if (current is T ancestor)
+                {
+                    return ancestor;
+                }
+                current = VisualTreeHelper.GetParent(current);
+            }
+            return null;
+        }
 
     }
 }
