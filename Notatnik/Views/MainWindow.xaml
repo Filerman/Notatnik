@@ -162,12 +162,12 @@
                                       Command="{Binding DeleteMarkedNotesCommand}"/>
 
                             <MenuItem Header="Przenieś do folderu..." Icon="📂"
-                                      Command="{Binding MoveNoteCommand}"
+                                      Command="{Binding MoveMarkedOrSelectedNoteCommand}"
                                       CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu},
                                                                  Path=PlacementTarget.SelectedItem}"/>
 
                             <MenuItem Header="Kopiuj do folderu…" Icon="📋"
-                                      Command="{Binding CopyNoteCommand}"
+                                      Command="{Binding CopyMarkedOrSelectedNotesCommand}"
                                       CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu},
                                                                  Path=PlacementTarget.SelectedItem}"/>
 
