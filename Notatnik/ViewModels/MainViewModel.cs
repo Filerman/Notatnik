@@ -17,7 +17,7 @@ namespace Notatnik.ViewModels
     public class MainViewModel : INotifyPropertyChanged
     {
         private readonly AppDbContext _db;
-        public ObservableCollection<Folder> Folders { get; }
+        public ObservableCollection<Folder> Folders { get; set; }
         public ObservableCollection<Note> Notes { get; }
 
         public ICommand SetSortCommand { get; }
@@ -536,10 +536,11 @@ namespace Notatnik.ViewModels
             }
             else
             {
-                parentFolder.Subfolders.Add(folder);
+                //parentFolder.Subfolders.Add(folder);
             }
 
             SelectedFolder = folder;
+            RefreshFolders();
         }
 
         private void EditFolder()
@@ -584,9 +585,9 @@ namespace Notatnik.ViewModels
             }
             else
             {
-                var parent = _db.Folders.Include(f => f.Subfolders)
-                                       .FirstOrDefault(f => f.Id == folder.ParentFolderId);
-                parent?.Subfolders.Remove(folder);
+                //var parent = _db.Folders.Include(f => f.Subfolders)
+                                       //.FirstOrDefault(f => f.Id == folder.ParentFolderId);
+                //parent?.Subfolders.Remove(folder);
             }
 
             _db.SaveChanges();
@@ -689,6 +690,8 @@ namespace Notatnik.ViewModels
             if (markedNotes.Any() || markedFolders.Any())
             {
                 DeleteMarkedItems();
+                RefreshFolders();
+
             }
             else if (SingleSelectedNote != null)
             {
@@ -697,6 +700,8 @@ namespace Notatnik.ViewModels
             else if (SelectedFolder != null)
             {
                 DeleteFolder(SelectedFolder);
+                RefreshFolders();
+
             }
         }
 
@@ -798,6 +803,39 @@ namespace Notatnik.ViewModels
                     yield return subfolder;
                 }
             }
+        }
+
+        public void RefreshFolders()
+        {
+            // Pobierz aktualnie zaznaczony folder
+            var currentSelected = SelectedFolder;
+
+            // Załaduj ponownie hierarchię folderów
+            var rootFolders = _db.Folders
+                                .Include(f => f.Subfolders)
+                                .Where(f => f.ParentFolderId == null)
+                                .ToList();
+
+            // Przypisz nową kolekcję
+            Folders = new ObservableCollection<Folder>(rootFolders);
+            OnPropertyChanged(nameof(Folders));
+
+            // Przywróć zaznaczenie jeśli istnieje
+            if (currentSelected != null)
+            {
+                SelectedFolder = FindFolderInCollection(Folders, currentSelected.Id);
+            }
+        }
+
+        private Folder FindFolderInCollection(IEnumerable<Folder> folders, int folderId)
+        {
+            foreach (var folder in folders)
+            {
+                if (folder.Id == folderId) return folder;
+                var found = FindFolderInCollection(folder.Subfolders, folderId);
+                if (found != null) return found;
+            }
+            return null;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
