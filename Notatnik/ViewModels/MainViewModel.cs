@@ -49,6 +49,8 @@ namespace Notatnik.ViewModels
 
         public ICommand SearchCommand { get; }
         public ICommand PrintCommand { get; }
+        public ICommand PrintMarkedCommand { get; }
+        public ICommand PrintMarkedOrSelectedCommand { get; }
         public ICommand OpenChartsCommand { get; }
 
         private Note _singleSelectedNote;
@@ -116,7 +118,11 @@ namespace Notatnik.ViewModels
             DeleteMarkedItemsCommand = new RelayCommand(_ => DeleteMarkedItems(), _ => Notes.Any(n => n.IsMarkedForDeletion) || Folders.Any(f => f.IsMarkedForDeletion));
 
             SearchCommand = new RelayCommand(_ => OpenSearchWindow());
+
             PrintCommand = new RelayCommand(_ => Print());
+            PrintMarkedCommand = new RelayCommand(_ => PrintMarked());
+            PrintMarkedOrSelectedCommand = new RelayCommand(_ => PrintMarkedOrSelected());
+
             OpenChartsCommand = new RelayCommand(_ => ShowCharts());
 
             if (Folders.Any())
@@ -720,6 +726,41 @@ namespace Notatnik.ViewModels
                 doc.Name = "NotePrintDocument";
                 printDialog.PrintDocument(((System.Windows.Documents.IDocumentPaginatorSource)doc)
                                           .DocumentPaginator, "Drukowanie notatki");
+            }
+        }
+
+        private void PrintMarked()
+        {
+            var markedNotes = Notes.Where(n => n.IsMarkedForDeletion).ToList();
+
+            if (!markedNotes.Any()) return;
+
+            foreach (var note in markedNotes)
+            {
+                var printDialog = new System.Windows.Controls.PrintDialog();
+                if (printDialog.ShowDialog() == true)
+                {
+                    var doc = new System.Windows.Documents.FlowDocument(
+                        new System.Windows.Documents.Paragraph(
+                            new System.Windows.Documents.Run(SingleSelectedNote.Content)));
+                    doc.Name = "NotePrintDocument";
+                    printDialog.PrintDocument(((System.Windows.Documents.IDocumentPaginatorSource)doc)
+                                              .DocumentPaginator, "Drukowanie notatki");
+                }
+            }
+        }
+
+        private void PrintMarkedOrSelected()
+        {
+            var markedNotes = Notes.Where(n => n.IsMarkedForDeletion).ToList();
+
+            if (markedNotes.Any())
+            {
+                PrintMarked();
+            }
+            else if (SingleSelectedNote != null)
+            {
+                Print();
             }
         }
 

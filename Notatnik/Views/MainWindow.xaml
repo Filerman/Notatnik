@@ -51,7 +51,7 @@
                 <Separator/>
                 <Button Content="📊" ToolTip="Statystyka"            Command="{Binding OpenChartsCommand}" />
                 <Button Content="🔍" ToolTip="Wyszukiwanie"            Command="{Binding SearchCommand}" />
-                <Button Content="🖨" ToolTip="Drukuj"                  Command="{Binding PrintCommand}" />
+                <Button Content="🖨" ToolTip="Drukuj"                  Command="{Binding PrintMarkedOrSelectedCommand}" />
                 <Separator/>
                 <Button Content="⧉" ToolTip="Kopiuj notatki"           Command="{Binding CopyMarkedOrSelectedNotesCommand}" />
                 <Button Content="🗂" ToolTip="Zmień folder"            Command="{Binding MoveMarkedOrSelectedNoteCommand}" />
