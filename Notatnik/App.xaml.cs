@@ -8,7 +8,6 @@ namespace Notatnik
     {
         public App()
         {
-            // łapiemy wszelkie nieobsłużone wyjątki na wątku UI
             this.DispatcherUnhandledException += App_DispatcherUnhandledException;
         }
 
@@ -20,10 +19,8 @@ namespace Notatnik
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
 
-            // wypisz do debuggera pełne info
             System.Diagnostics.Debug.WriteLine(e.Exception);
 
-            // jeśli ustawisz na true, aplikacja nie zakończy się natychmiast
             e.Handled = true;
         }
     }
