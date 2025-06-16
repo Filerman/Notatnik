@@ -41,9 +41,7 @@ namespace Notatnik.ViewModels
             get => _filterTags;
             set { _filterTags = value; OnPropertyChanged(nameof(SortByTags)); }
         }
-        /* ────────────────────────────────────────────────────── */
 
-        /* ─── Tekst wyszukiwany ─── */
         private string _searchText;
         public string SearchText
         {
@@ -60,7 +58,6 @@ namespace Notatnik.ViewModels
             }
         }
 
-        /* ─── Wyniki i zaznaczenie ─── */
         public ObservableCollection<Note> SearchResults { get; } = new();
         private Note _selectedResult;
         public Note SelectedResult
@@ -77,7 +74,6 @@ namespace Notatnik.ViewModels
             }
         }
 
-        /* ─── Komendy ─── */
         private readonly RelayCommand _searchNotesCommand;
         public ICommand SearchNotesCommand => _searchNotesCommand;
 
@@ -101,7 +97,6 @@ namespace Notatnik.ViewModels
             _openSelectedNoteCommand = new RelayCommand(_ => OpenSelectedNote(), _ => SelectedResult != null);
         }
 
-        /* ────────────────────────────────────────────────────── */
         private bool CanSearch() => !string.IsNullOrWhiteSpace(SearchText);
 
         private void DoSearch()
@@ -111,7 +106,6 @@ namespace Notatnik.ViewModels
             if (string.IsNullOrWhiteSpace(SearchText))
                 return;
 
-            // jeśli user odznaczy wszystkie filtry – traktuj tak, jakby włączył wszystkie
             bool allOff = !SortByTitle && !SortByFolder && !SortByContent && !SortByTags;
 
             string q = SearchText.Trim().ToLower();
@@ -123,16 +117,12 @@ namespace Notatnik.ViewModels
                                  .Include(n => n.ChecklistItems)
                                  .Include(n => n.Folder)
                                  .Where(n =>
-                                     // Tytuł
                                      ((SortByTitle || allOff) && EF.Functions.Like(n.Title.ToLower(), $"%{q}%"))
                                      ||
-                                     // Folder
                                      ((SortByFolder || allOff) && n.Folder.Name.ToLower().Contains(q))
                                      ||
-                                     // Treść (Regular / LongFormat)
                                      ((SortByContent || allOff) && EF.Functions.Like(n.Content.ToLower(), $"%{q}%"))
                                      ||
-                                     // Tagi
                                      ((SortByTags || allOff) && n.Tags.Any(t => t.Name.ToLower().Contains(q)))
                                  )
                                  .OrderByDescending(n => n.ModifiedAt)
@@ -160,7 +150,6 @@ namespace Notatnik.ViewModels
                 _mainVm.OpenNoteForEdit(SelectedResult);
         }
 
-        /* ─── INotifyPropertyChanged ─── */
         public event PropertyChangedEventHandler PropertyChanged;
         private void OnPropertyChanged(string name) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));

@@ -35,11 +35,9 @@ namespace Notatnik.ViewModels
             }
         }
 
-        // Komendy dla checklisty:
         public ICommand AddItemCommand { get; }
         public ICommand RemoveItemCommand { get; }
 
-        // Komendy dla tagów:
         private RelayCommand _addTagCommand;
         public ICommand AddTagCommand => _addTagCommand;
 
@@ -48,7 +46,6 @@ namespace Notatnik.ViewModels
 
         public ICommand RemoveTagCommand { get; }
 
-        // Komendy Zapisz / Anuluj
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
 
@@ -60,18 +57,15 @@ namespace Notatnik.ViewModels
             Note = note ?? throw new ArgumentNullException(nameof(note));
             _db = db ?? throw new ArgumentNullException(nameof(db));
 
-            // 1) Upewnij się, że relacje Note.Tags i Note.ChecklistItems są załadowane
             _db.Entry(Note).Collection(n => n.Tags).Load();
             _db.Entry(Note).Collection(n => n.ChecklistItems).Load();
 
-            // 2) Wczytanie checklisty (jeśli Note.Type == CheckList), w przeciwnym razie pusta lista
             ChecklistItems = new ObservableCollection<ChecklistItem>(
                 note.Type == NoteType.CheckList
                     ? note.ChecklistItems
                     : Array.Empty<ChecklistItem>()
             );
 
-            // 3) Wczytaj z Note istniejące tagi (same nazwy) do kolekcji Tags
             if (note.Tags != null)
             {
                 foreach (var tag in note.Tags.OrderBy(t => t.Name))
@@ -80,7 +74,6 @@ namespace Notatnik.ViewModels
                 }
             }
 
-            // 4) Załaduj wszystkie dostępne tagi z bazy do AvailableTags (ComboBox)
             var allTags = _db.Tags
                              .AsNoTracking()
                              .Select(t => t.Name)
@@ -91,7 +84,6 @@ namespace Notatnik.ViewModels
                 AvailableTags.Add(tagName);
             }
 
-            // 5) Inicjalizacja komend
             AddItemCommand = new RelayCommand(_ => AddItem());
             RemoveItemCommand = new RelayCommand(o => RemoveItem(o as ChecklistItem), o => o is ChecklistItem);
 
@@ -103,15 +95,13 @@ namespace Notatnik.ViewModels
             SaveCommand = new RelayCommand(_ =>
             {
                 if (Validate())
-                    OnRequestClose(true);   // zamknij z DialogResult = true
+                    OnRequestClose(true);
             });
             CancelCommand = new RelayCommand(_ => OnRequestClose(false));
         }
 
-        // WALIDACJA
         private bool Validate()
         {
-            // 1) Tytuł
             var title = (Note.Title ?? "").Trim();
             if (title.Length == 0)
             {
@@ -126,7 +116,6 @@ namespace Notatnik.ViewModels
                 return false;
             }
 
-            // 2) Zawartość zależnie od typu
             switch (Note.Type)
             {
                 case NoteType.Regular:
@@ -152,7 +141,7 @@ namespace Notatnik.ViewModels
                     break;
             }
 
-            return true;   // OK
+            return true;
         }
 
         private void AddItem()
@@ -179,7 +168,6 @@ namespace Notatnik.ViewModels
         private bool CanAddTag()
         {
             var tag = NewTagText?.Trim() ?? "";
-            // warunki: niepusty, nie zawiera spacji, i nie ma w kolekcji Tags (ignorując wielkość liter)
             return !string.IsNullOrWhiteSpace(tag)
                    && !tag.Contains(" ")
                    && !Tags.Contains(tag, StringComparer.InvariantCultureIgnoreCase);
@@ -193,11 +181,9 @@ namespace Notatnik.ViewModels
             {
                 Tags.Add(tag);
 
-                // Jeśli w AvailableTags jeszcze nie ma tej nazwy, dodajemy ją tam również:
                 if (!AvailableTags.Contains(tag, StringComparer.InvariantCultureIgnoreCase))
                 {
                     AvailableTags.Add(tag);
-                    // Nowy tag zostanie w bazie utworzony dopiero przy SaveTagsToNote()
                 }
             }
 
@@ -213,17 +199,10 @@ namespace Notatnik.ViewModels
             }
         }
 
-        /// <summary>
-        /// Usuwa wybrany tag z całej aplikacji:
-        /// 1) Jeśli istnieje w bazie – usuwa rekord Tag (a EF Core usunie powiązania w tabeli łączącej).
-        /// 2) Usuwa go z AvailableTags.
-        /// 3) Jeśli notatka miała go już przypisanego – usuwa z Note.Tags i z kolekcji Tags.
-        /// </summary>
         private void RemoveAvailableTag(string tagName)
         {
             if (string.IsNullOrEmpty(tagName)) return;
 
-            // Konwertujemy raz na małe litery, aby można było porównać z kolumną w SQL
             var lowerName = tagName.ToLower();
 
             var tagEntity = _db.Tags
@@ -232,24 +211,20 @@ namespace Notatnik.ViewModels
 
             if (tagEntity != null)
             {
-                // Usuń powiązania NOTATKA ↔ TAG (jeśli istnieją)
                 foreach (var note in tagEntity.Notes.ToList())
                 {
                     note.Tags.Remove(tagEntity);
                 }
 
-                // Usuń sam tag z bazy
                 _db.Tags.Remove(tagEntity);
                 _db.SaveChanges();
             }
 
-            // Usuń z AvailableTags
             if (AvailableTags.Contains(tagName))
             {
                 AvailableTags.Remove(tagName);
             }
 
-            // Usuń z przypisanych tagów tej notatki, jeśli tu był
             if (Tags.Contains(tagName))
             {
                 Tags.Remove(tagName);
@@ -259,20 +234,13 @@ namespace Notatnik.ViewModels
             OnPropertyChanged(nameof(Tags));
         }
 
-        /// <summary>
-        /// Przy zapisie notatki: tworzymy/aktualizujemy relacje wiele-do-wielu Note->Tag.
-        /// </summary>
         private void SaveTagsToNote()
         {
-            // 1) Załaduj wszystkie encje Tag z bazy (żeby nie robić kolejnych odpytań),
-            //    tak by po nazwie móc znaleźć istniejący Tag.
             var existingTags = _db.Tags.ToList();
 
-            // 2) Upewnij się, że Note.Tags jest załadowane
             _db.Entry(Note).Collection(n => n.Tags).Load();
             Note.Tags.Clear();
 
-            // 3) Dla każdej nazwy w Tags:
             foreach (var tagName in Tags)
             {
                 var exist = existingTags
@@ -280,12 +248,10 @@ namespace Notatnik.ViewModels
 
                 if (exist != null)
                 {
-                    // Podpinamy istniejący
                     Note.Tags.Add(exist);
                 }
                 else
                 {
-                    // Tworzymy nowy
                     var newTag = new Tag { Name = tagName };
                     _db.Tags.Add(newTag);
                     Note.Tags.Add(newTag);
@@ -293,7 +259,6 @@ namespace Notatnik.ViewModels
                 }
             }
 
-            // 4) Zapisz w bazie (zarówno nowe encje Tag, jak i relacje wiele-do-wielu)
             _db.SaveChanges();
         }
 

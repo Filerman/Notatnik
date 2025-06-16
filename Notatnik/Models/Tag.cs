@@ -2,7 +2,7 @@
 
 namespace Notatnik.Models
 {
-    public class Tag // test
+    public class Tag
     {
         public int Id { get; set; }
         public string Name { get; set; }

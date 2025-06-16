@@ -7,7 +7,6 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize">
 
-    <!-- ░░░ STYLE – klikalny cały wiersz ░░░ -->
     <Window.Resources>
         <Style x:Key="FlatTreeItem" TargetType="{x:Type TreeViewItem}">
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -23,7 +22,6 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <!-- systemowa strzałka -->
                             <ToggleButton x:Name="Expander"
                                           Grid.Column="0"
                                           Width="16" Height="16"
@@ -32,7 +30,6 @@
                                           ClickMode="Press"
                                           Focusable="False"/>
 
-                            <!-- pełnoszerokie podświetlenie -->
                             <Border x:Name="Bd" Grid.Column="1"
                                     Background="Transparent"
                                     Padding="6,2,2,2">
@@ -54,9 +51,8 @@
         </Style>
     </Window.Resources>
 
-    <!-- ░░░ UKŁAD ░░░ -->
+    <!-- yklad -->
     <Grid Margin="20">
-        <!-- Auto: etykieta,  *: drzewo,  Auto: przyciski -->
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -67,7 +63,6 @@
                    FontWeight="Bold"
                    Margin="0,0,0,8"/>
 
-        <!-- Drzewo folderów w wierszu 1 (*) -->
         <Border Grid.Row="1"
                 BorderBrush="LightGray"
                 BorderThickness="1"

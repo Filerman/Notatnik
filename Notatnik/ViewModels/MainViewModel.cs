@@ -299,7 +299,7 @@ namespace Notatnik.ViewModels
                 {
                     MessageBox.Show($"W tym folderze jest już notatka o tytule „{noteToEdit.Title}”.",
                                     "Duplikat tytułu", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;                    // nie zapisuj zmian
+                    return;
                 }
                 _db.SaveChanges();
                 LoadNotes();
@@ -733,10 +733,8 @@ namespace Notatnik.ViewModels
         }
         private IEnumerable<Folder> LoadFullHierarchy()
         {
-            // Najpierw ładujemy wszystkie foldery (ważne: AsNoTracking dla wydajności)
             var allFolders = _db.Folders.AsNoTracking().ToList();
 
-            // Budujemy hierarchię
             var rootFolders = allFolders.Where(f => f.ParentFolderId == null).ToList();
 
             foreach (var folder in allFolders)

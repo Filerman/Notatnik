@@ -51,7 +51,6 @@
             </GroupBox>
         </StackPanel>
 
-        <!-- 1. Lista wyników wyszukiwania -->
         <ListView Grid.Row="1"
                   ItemsSource="{Binding SearchResults}"
                   SelectedItem="{Binding SelectedResult}"
@@ -60,7 +59,7 @@
                   ScrollViewer.VerticalScrollBarVisibility="Auto">
             <ListView.View>
                 <GridView>
-                    <!-- Kolumna: Tytuł -->
+                    <!-- tytuł -->
                     <GridViewColumn Header="Tytuł" Width="200">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -69,7 +68,7 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
-                    <!-- Kolumna: Podgląd -->
+                    <!-- podgląd -->
                     <GridViewColumn Header="Podgląd" Width="220">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -78,7 +77,7 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
-                    <!-- Kolumna: Folder -->
+                    <!-- folder -->
                     <GridViewColumn Header="Folder" Width="140">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -87,7 +86,7 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
-                    <!-- Kolumna: Tagi -->
+                    <!-- tagi -->
                     <GridViewColumn Header="Tagi" Width="220">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -110,7 +109,7 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
-                    <!-- Kolumna: Zmodyfikowano -->
+                    <!-- zmodyfikowano -->
                     <GridViewColumn Header="Zmodyfikowano" Width="130">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>

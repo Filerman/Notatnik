@@ -7,8 +7,6 @@ namespace Notatnik.Models
         public int Id { get; set; }
         public string Text { get; set; }
         public bool IsChecked { get; set; }
-
-        // relacja do Note
         public int NoteId { get; set; }
         public Note Note { get; set; }
     }

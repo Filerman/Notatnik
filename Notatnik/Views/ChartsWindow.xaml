@@ -10,12 +10,10 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- 1. Notatki wg kategorii -->
         <oxy:PlotView Grid.Row="0"
                       Model="{Binding CategoryPlot}"
                       Margin="4" />
 
-        <!-- 2. Słowa w notatkach -->
         <oxy:PlotView Grid.Row="1"
                       Model="{Binding WordCountPlot}"
                       Margin="4" />

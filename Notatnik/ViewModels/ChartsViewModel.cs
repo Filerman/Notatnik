@@ -17,18 +17,13 @@ namespace Notatnik.ViewModels
 
         public ChartsViewModel()
         {
-            /* ----------  KONTEKST  ---------- */
             using var ctx = new AppDbContext(
                 new DbContextOptionsBuilder<AppDbContext>()
                     .UseSqlite("Data Source=Notatnik.db")
                     .Options);
 
-            /* ----------  PALETA  ---------- */
-            var colors = OxyPalettes.HueDistinct(10).Colors;   // 10 różnych barw
+            var colors = OxyPalettes.HueDistinct(10).Colors;
 
-            /* =====================================
-             * 1)   LICZBA NOTATEK WG TYPU
-             * =================================== */
             var byType = ctx.Notes
                             .AsNoTracking()
                             .GroupBy(n => n.Type)
@@ -70,13 +65,10 @@ namespace Notatnik.ViewModels
             catModel.Series.Add(typeSeries);
             CategoryPlot = catModel;
 
-            /* =====================================
-             * 2)   ŁĄCZNA LICZBA SŁÓW  WG  TYPU
-             * =================================== */
             var wordsByType = ctx.Notes
                                  .AsNoTracking()
                                  .Include(n => n.ChecklistItems)
-                                 .AsEnumerable()                // LINQ-to-Objects
+                                 .AsEnumerable()
                                  .GroupBy(n => n.Type)
                                  .Select(g => new
                                  {
@@ -122,7 +114,6 @@ namespace Notatnik.ViewModels
             WordCountPlot = wordsModel;
         }
 
-        /* --------  LICZENIE SŁÓW  -------- */
         private static int CountWords(Note n)
         {
             if (n.Type is NoteType.Regular or NoteType.LongFormat)

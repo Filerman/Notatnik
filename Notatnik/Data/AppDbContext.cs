@@ -22,9 +22,6 @@ namespace Notatnik.Data
             }
         }
 
-        /// <summary>
-        /// Konstruktor bezparametrowy – używany w ChartsViewModel
-        /// </summary>
         public AppDbContext()
             : this(new DbContextOptionsBuilder<AppDbContext>()
                      .UseSqlite("Data Source=Notatnik.db")
