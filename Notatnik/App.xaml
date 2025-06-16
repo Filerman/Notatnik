@@ -5,11 +5,9 @@
 
     <Application.Resources>
 
-        <!-- ═══  PĘDZLE UŻYWANE W WIELU MIEJSCACH  ═══ -->
         <SolidColorBrush x:Key="RowHoverBrush"    Color="#F0F7FF"/>
         <SolidColorBrush x:Key="RowSelectedBrush" Color="#D6E4FF"/>
 
-        <!-- ═══ 1. WINDOW → FADE-IN + ZOOM  ═══ -->
         <Style TargetType="Window">
             <Setter Property="Opacity" Value="0"/>
             <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
@@ -35,7 +33,7 @@
             </Style.Triggers>
         </Style>
 
-        <!-- ═══ 2. BUTTON → “POP” + CIEŃ  ═══ -->
+
         <Style x:Key="PopButtonBase" TargetType="Button">
             <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
             <Setter Property="RenderTransform">
@@ -50,7 +48,6 @@
             </Setter>
 
             <Style.Triggers>
-                <!-- Hover -->
                 <Trigger Property="IsMouseOver" Value="True">
                     <Trigger.EnterActions>
                         <BeginStoryboard>
@@ -78,7 +75,6 @@
                     </Trigger.ExitActions>
                 </Trigger>
 
-                <!-- Click-down / Click-up -->
                 <EventTrigger RoutedEvent="PreviewMouseLeftButtonDown">
                     <BeginStoryboard>
                         <Storyboard>
@@ -102,13 +98,11 @@
             </Style.Triggers>
         </Style>
 
-        <!-- → GLOBALNE PODPIĘCIE ↓ -->
         <Style TargetType="Button" BasedOn="{StaticResource PopButtonBase}"/>
         <Style x:Key="{x:Static ToolBar.ButtonStyleKey}"
                TargetType="Button"
                BasedOn="{StaticResource PopButtonBase}"/>
 
-        <!-- ═══ 3. LISTVIEWITEM → Hover & Selected  ═══ -->
         <Style TargetType="ListViewItem">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -125,7 +119,6 @@
             </Style.Triggers>
         </Style>
 
-        <!-- ═══ 4. CHECKBOX → Bounce  ═══ -->
         <Style TargetType="CheckBox">
             <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
             <Setter Property="RenderTransform">
@@ -147,8 +140,6 @@
             </Style.Triggers>
         </Style>
 
-        <!-- ═══ 5. TREEVIEW  ═══ -->
-        <!-- 5a. Obracana strzałka (ToggleButton) -->
         <Style x:Key="ArrowRotateStyle" TargetType="ToggleButton">
             <Setter Property="Width"  Value="16"/>
             <Setter Property="Height" Value="16"/>
@@ -196,9 +187,7 @@
             </Setter>
         </Style>
 
-        <!-- 5b. TreeViewItem – hover / selected + podmiana strzałki -->
         <Style TargetType="TreeViewItem">
-            <!-- każdy ToggleButton w wierszu używa naszej strzałki -->
             <Style.Resources>
                 <Style TargetType="ToggleButton"
                        BasedOn="{StaticResource ArrowRotateStyle}"/>
